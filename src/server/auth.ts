@@ -67,6 +67,17 @@ function readSessionToken(cookieHeader: string | undefined | null): string | nul
   return null;
 }
 
+/** Read a cookie value by name from a plain fetch Request. */
+export function readCookie(req: Request, name: string): string | null {
+  const cookieHeader = req.headers.get("cookie");
+  if (!cookieHeader) return null;
+  for (const part of cookieHeader.split(";")) {
+    const [k, ...rest] = part.trim().split("=");
+    if (k === name) return rest.join("=");
+  }
+  return null;
+}
+
 export function getSessionUser(req: NextRequest): User | null {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   return withoutPasswordHash(getUserFromToken(token));
@@ -178,6 +189,56 @@ export function getUserByUsername(username: string): User | null {
     .prepare("SELECT * FROM users WHERE lower(username) = lower(?)")
     .get(username);
   return row ? ensureAdminFlag(mapUser(row)) : null;
+}
+
+/** Derive a collision-free username from a Google display name. */
+function uniqueUsername(base: string): string {
+  const clean =
+    base
+      .replace(/[^a-zA-Z0-9_]/g, "")
+      .slice(0, 20) || "User";
+  const candidate = clean.length >= 3 ? clean : clean + "User";
+  if (!getUserByUsername(candidate)) return candidate;
+  for (let i = 0; i < 10; i++) {
+    const attempt = `${candidate}${crypto.randomInt(100, 999)}`;
+    if (!getUserByUsername(attempt)) return attempt;
+  }
+  return `${candidate}_${crypto.randomBytes(6).toString("hex")}`;
+}
+
+/**
+ * Find an existing user by their (verified) Google email, or create one.
+ * Google emails are verified by Google, so auto-linking to an existing
+ * account with the same address is safe.
+ */
+export function findOrCreateGoogleUser(input: {
+  email: string;
+  name?: string;
+  avatar?: string;
+}): User | null {
+  const email = input.email.trim().toLowerCase();
+  const existing = getUserByEmail(email);
+  if (existing) {
+    // Opportunistically refresh avatar (only if none set yet).
+    if (!existing.avatar && input.avatar) {
+      db.prepare("UPDATE users SET avatar = ? WHERE id = ?").run(input.avatar, existing.id);
+    }
+    return getUserById(existing.id);
+  }
+
+  const res = createUser({
+    email,
+    username: uniqueUsername(input.name || "User"),
+    // Google users authenticate via Google, not a password. A random
+    // high-entropy hash makes password login impossible for this account.
+    password: crypto.randomBytes(24).toString("hex"),
+    ageVerified: true,
+  });
+  if (!res.user) return null;
+  if (input.avatar) {
+    db.prepare("UPDATE users SET avatar = ? WHERE id = ?").run(input.avatar, res.user.id);
+  }
+  return getUserById(res.user.id);
 }
 
 export function publicUser(user: User) {
