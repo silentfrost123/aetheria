@@ -13,10 +13,13 @@ const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 // preventing a timing side-channel that would allow account enumeration.
 export const DUMMY_HASH = bcrypt.hashSync("aetheria-timing-equalizer", 12);
 
-// Emails that are treated as site administrators. Comma-separated. Matching
-// accounts are auto-promoted (is_admin=1) on login/registration so the flag
-// can never be lost, and this list is the single source of truth.
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "mustafasammar99@gmail.com")
+// Emails that are treated as site administrators. Comma-separated.
+//
+// IMPORTANT: this comes ONLY from the ADMIN_EMAILS environment variable (set in
+// your host's secret settings — e.g. Railway). It must never be hardcoded in
+// source, so that the list of privileged accounts is not exposed in the repo.
+// Matching accounts are auto-promoted (is_admin=1) on login/registration.
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
   .split(",")
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
