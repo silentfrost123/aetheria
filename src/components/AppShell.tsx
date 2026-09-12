@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { usePoints } from "@/lib/points-context";
 import { Icon } from "./icons";
 
 type NavItem = { href: string; label: string; icon: string };
@@ -15,6 +16,7 @@ const PRIMARY_NAV: NavItem[] = [
 ];
 
 const SECONDARY_NAV: NavItem[] = [
+  { href: "/points", label: "Points", icon: "coins" },
   { href: "/library", label: "Library", icon: "library" },
   { href: "/following", label: "Following", icon: "following" },
   { href: "/notifications", label: "Notifications", icon: "bell" },
@@ -35,11 +37,13 @@ function NavLink({
   active,
   collapsed,
   emphasize = false,
+  badge,
 }: {
   item: NavItem;
   active: boolean;
   collapsed: boolean;
   emphasize?: boolean;
+  badge?: string;
 }) {
   if (emphasize) {
     return (
@@ -68,7 +72,10 @@ function NavLink({
         <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-accent-soft" />
       )}
       <Icon name={item.icon} className="w-5 h-5 shrink-0" />
-      {!collapsed && <span>{item.label}</span>}
+      {!collapsed && <span className="flex-1">{item.label}</span>}
+      {!collapsed && badge && (
+        <span className="text-xs font-semibold text-accent-amber tabular-nums">{badge}</span>
+      )}
     </Link>
   );
 }
@@ -77,6 +84,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const { user } = useAuth();
+  const { balance } = usePoints();
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
@@ -132,7 +140,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             )}
             {SECONDARY_NAV.map((item) => (
-              <NavLink key={item.href} item={item} active={isActive(item.href)} collapsed={collapsed} />
+              <NavLink
+                key={item.href}
+                item={item}
+                active={isActive(item.href)}
+                collapsed={collapsed}
+                badge={item.href === "/points" && user ? String(balance) : undefined}
+              />
             ))}
           </div>
         </nav>
@@ -147,10 +161,20 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {user.username[0]?.toUpperCase()}
               </div>
               {!collapsed && (
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold truncate">{user.username}</div>
                   <div className="text-xs text-text-faint capitalize">{user.plan}</div>
                 </div>
+              )}
+              {!collapsed && (
+                <Link
+                  href="/points"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-accent-amber bg-accent-amber/10 border border-accent-amber/20 rounded-full px-2 py-0.5 shrink-0"
+                  title="Your points"
+                >
+                  <Icon name="coins" className="w-3.5 h-3.5" />
+                  {balance}
+                </Link>
               )}
             </Link>
           ) : (

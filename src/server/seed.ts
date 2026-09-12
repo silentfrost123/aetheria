@@ -132,8 +132,22 @@ function insertLore(worldId: string | null, characterId: string | null, entry: {
   );
 }
 
+function seedPoints(uid: string) {
+  // Starting balance + a couple of demo redeem codes.
+  db.prepare(
+    "INSERT INTO point_balances (user_id, balance, updated_at) VALUES (?, 1000, ?)"
+  ).run(uid, nowIso());
+  db.prepare(
+    "INSERT INTO point_transactions (id, user_id, amount, kind, note, created_at) VALUES (?, ?, ?, 'admin', ?, ?)"
+  ).run(id("ptx"), uid, 1000, "Welcome bonus", nowIso());
+  db.prepare(
+    "INSERT INTO point_codes (id, code, amount, created_at) VALUES (?, 'AETHERIA100', 500, ?), (?, 'WELCOME500', 500, ?)"
+  ).run(id("pcd"), nowIso(), id("pcd"), nowIso());
+}
+
 export function seedAll() {
   const seedUid = seedUser();
+  seedPoints(seedUid);
 
   // ---- World: The Ashen Kingdom ----
   const worldId = id("wrl");

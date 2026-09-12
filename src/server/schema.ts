@@ -345,4 +345,37 @@ export const MIGRATIONS: Migration[] = [
       );
     `,
   },
+  {
+    name: "008_points",
+    sql: `
+      CREATE TABLE IF NOT EXISTS point_balances (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        balance INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS point_transactions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        amount INTEGER NOT NULL,
+        kind TEXT NOT NULL,
+        note TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_point_transactions_user ON point_transactions(user_id, created_at);
+
+      CREATE TABLE IF NOT EXISTS point_claims (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        last_claim_date TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS point_codes (
+        id TEXT PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        amount INTEGER NOT NULL,
+        used_by TEXT,
+        created_at TEXT NOT NULL
+      );
+    `,
+  },
 ];

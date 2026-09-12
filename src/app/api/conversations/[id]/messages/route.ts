@@ -8,6 +8,7 @@ import {
   applyHeuristicRelationshipDrift,
 } from "@/server/services/chat";
 import { generateStreaming } from "@/server/services/generation";
+import { spendPoints, MESSAGE_COST } from "@/server/services/points";
 import { getRelationship, ensureRelationship } from "@/server/services/relationship";
 import { getWorldState } from "@/server/services/worldState";
 import { listMemories } from "@/server/services/memory";
@@ -50,7 +51,25 @@ export async function POST(
     }
   }
 
-  // ---- Normal flow ----
+  // ---- Normal flow: charge points before generating ----
+  const spend = spendPoints(
+    user.id,
+    MESSAGE_COST,
+    "message",
+    `Message in conversation ${conv.id}`
+  );
+  if (!spend.ok) {
+    return json(
+      {
+        error: "Not enough points to send a message.",
+        code: "INSUFFICIENT_POINTS",
+        balance: spend.balance,
+        required: spend.required,
+      },
+      402
+    );
+  }
+
   const userMsg = storeUserMessage(conv.id, branch.id, content);
   applyHeuristicRelationshipDrift(conv.id, user.id, conv.characterId ?? null, content);
 

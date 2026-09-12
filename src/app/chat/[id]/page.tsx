@@ -8,6 +8,7 @@ import { Avatar } from "@/components/Avatar";
 import { MessageBubble, ChatMessageVM } from "@/components/MessageBubble";
 import { apiFetch, streamChat } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { usePoints } from "@/lib/points-context";
 import { Icon } from "@/components/icons";
 
 interface MemoryVM {
@@ -54,7 +55,9 @@ interface ChatData {
 export default function ChatPage() {
   const params = useParams();
   const { user } = useAuth();
+  const { balance, config, refresh: refreshPoints } = usePoints();
   const router = useRouter();
+  const [outOfPoints, setOutOfPoints] = useState(false);
   const [data, setData] = useState<ChatData | null>(null);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -128,6 +131,8 @@ export default function ChatPage() {
       });
       setStreamText("");
       setStreaming(false);
+      setOutOfPoints(false);
+      refreshPoints();
       // Refresh relationship/memory/state
       load();
     } catch (e: any) {
@@ -135,6 +140,13 @@ export default function ChatPage() {
       setStreamText("");
       if (e?.status === 401) {
         setAuthRequired(true);
+        return;
+      }
+      if (e?.status === 402) {
+        // Out of points
+        setData((d) => (d ? { ...d, messages: d.messages.filter((m) => m.id !== "temp-user") } : d));
+        setOutOfPoints(true);
+        refreshPoints();
         return;
       }
       alert(e.message || "Something went wrong.");
@@ -152,9 +164,11 @@ export default function ChatPage() {
           ? { ...s, messages: s.messages.map((m) => (m.id === msgId ? { ...m, content: d.message.content } : m)) }
           : s
       );
+      refreshPoints();
       load();
     } catch (e: any) {
-      alert(e.message);
+      if (e?.status === 402) setOutOfPoints(true);
+      else alert(e.message);
     } finally {
       setStreaming(false);
     }
@@ -164,8 +178,10 @@ export default function ChatPage() {
     try {
       const d = await apiFetch<{ message: any }>(`/api/messages/${msgId}/swipe`, { method: "POST" });
       setSwipePager((p) => ({ ...p, [msgId]: d.message.swipes.length }));
+      refreshPoints();
     } catch (e: any) {
-      alert(e.message);
+      if (e?.status === 402) setOutOfPoints(true);
+      else alert(e.message);
     }
   }
 
@@ -392,6 +408,17 @@ export default function ChatPage() {
           {/* Input */}
           <div className="shrink-0 border-t border-border-soft bg-bg-soft/70 backdrop-blur-xl p-3">
             <div className="max-w-3xl mx-auto">
+              {outOfPoints && (
+                <div className="mb-2 flex items-center gap-3 rounded-xl border border-accent-amber/30 bg-accent-amber/10 px-3 py-2.5">
+                  <Icon name="coins" className="w-5 h-5 text-accent-amber shrink-0" />
+                  <p className="text-sm text-text flex-1 min-w-0">
+                    You&apos;re out of points. Claim your daily bonus or buy more to keep chatting.
+                  </p>
+                  <Link href="/points" className="btn-primary !py-1.5 !px-3 text-xs whitespace-nowrap shrink-0">
+                    Get points
+                  </Link>
+                </div>
+              )}
               {ooc && (
                 <div className="text-[11px] text-amber-300/90 mb-1.5 flex items-center gap-1.5">
                   <Icon name="eye" className="w-3.5 h-3.5" /> OOC mode — talking outside the story.
@@ -422,7 +449,12 @@ export default function ChatPage() {
                 <span><button className="text-accent-soft hover:underline" onClick={() => send("/status")}>/status</button></span>
                 <span><button className="text-accent-soft hover:underline" onClick={() => send("/memory")}>/memory</button></span>
                 <span><button className="text-accent-soft hover:underline" onClick={() => send("/lore")}>/lore</button></span>
-                <span className="ml-auto hidden sm:block">Shift+Enter for newline</span>
+                <span className="ml-auto hidden sm:flex items-center gap-3">
+                  <Link href="/points" className="inline-flex items-center gap-1 text-accent-amber/90 hover:text-accent-amber">
+                    <Icon name="coins" className="w-3.5 h-3.5" /> {balance} pts
+                  </Link>
+                  <span className="text-text-faint/70">{config.messageCost}/msg · Shift+Enter for newline</span>
+                </span>
               </div>
             </div>
           </div>

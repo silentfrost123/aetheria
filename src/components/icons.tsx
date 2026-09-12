@@ -246,6 +246,13 @@ export function Icon({ name, className = "w-5 h-5" }: { name: string; className?
         <path d="M7 11l4-7c1 0 2 .8 2 2v3h5a2 2 0 0 1 2 2.2l-1 6A2 2 0 0 1 17 19h-9" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
       </>
     ),
+    coins: (
+      <>
+        <circle cx="8" cy="12" r="6" stroke="currentColor" strokeWidth="1.8" fill="none" />
+        <path d="M15.5 7.5A6 6 0 1 1 15.5 16.5" stroke="currentColor" strokeWidth="1.8" fill="none" />
+        <path d="M14 8.5v3.5h3.5M18 15.5v3h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </>
+    ),
   };
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">

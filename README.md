@@ -29,6 +29,7 @@ Built on three pillars: **CHARACTER** (who am I talking to?), **WORLD** (where a
 - **Personas** — create multiple user personas; they're woven into the AI context.
 - **RPG commands** — `/roll d20`, `/status`, `/memory`, `/lore`, `/scene`, `/help`, `/ooc`.
 - **Model abstraction** — OpenAI-compatible providers (OpenRouter/OpenAI/Anthropic) with a built-in **offline narrative engine** fallback, model routing (main/memory/summary/embed), token/cost/latency usage recording.
+- **Points system** — 500 free points/day (claimable), 50 points per AI message (send/regenerate/swipe), out-of-points blocking, redeem codes, transaction history, and a buy-points UI (payment provider stub).
 
 ## Tech stack
 
@@ -77,6 +78,15 @@ SUMMARY_MODEL=openai/gpt-4o-mini     # cheap model for summarization
 EMBED_MODEL=openai/text-embedding-3-small  # embeddings (optional)
 ```
 
+Points / monetization (optional — defaults shown):
+
+```bash
+DAILY_POINTS=500   # free points granted per day (claimed on /points)
+MESSAGE_COST=50    # points deducted per AI message (send, regenerate, swipe)
+```
+
+> Commands like `/roll` and `/status` are free. Every AI reply costs `MESSAGE_COST`.
+
 > **No key?** The app falls back to a built-in offline narrative engine, so chat,
 > memory, and lore all still work — responses are just less sophisticated.
 
@@ -91,6 +101,7 @@ Creates a demo user and sample content:
 - **Login:** `demo@aetheria.dev` / `password123`
 - **World:** The Ashen Kingdom (dark fantasy — magic powered by memory) with 5 lore entries
 - **Characters:** Elena (vampire queen), Raven (cyberpunk fixer), Marcus (knight of the Veil), and *The Ashen Road* (story-mode adventure)
+- **Points:** demo user starts with 1,000 points; redeem codes `AETHERIA100` and `WELCOME500` each grant 500
 
 ### 4. Run
 
@@ -158,6 +169,8 @@ PUT  /api/messages/:id            DELETE /api/messages/:id
 
 GET  /api/memories                POST /api/memories
 PUT  /api/memories/:id            DELETE /api/memories/:id
+
+GET  /api/points                  POST /api/points/claim       POST /api/points/redeem
 
 GET  /api/lore                    POST /api/lore
 POST /api/generate/character      POST /api/generate/world      POST /api/generate/scenario
