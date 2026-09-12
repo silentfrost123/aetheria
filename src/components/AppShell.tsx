@@ -62,7 +62,7 @@ function NavLink({
       href={item.href}
       className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
         active
-          ? "bg-accent/15 text-accent-soft"
+          ? "bg-accent/15 text-accent-soft shadow-glow-sm"
           : "text-text-dim hover:bg-white/5 hover:text-text"
       }`}
       title={collapsed ? item.label : undefined}
@@ -90,7 +90,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-screen bg-bg relative">
+      {/* Ambient aurora background */}
+      <div className="aurora" aria-hidden="true">
+        <div className="aurora-blob aurora-blob-1" />
+        <div className="aurora-blob aurora-blob-2" />
+        <div className="aurora-blob aurora-blob-3" />
+      </div>
+
       {/* Desktop sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 hidden md:flex flex-col border-r border-border-soft bg-bg-soft/80 backdrop-blur-xl transition-all duration-300 ${
@@ -196,8 +203,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main */}
-      <div className={`transition-all duration-300 ${collapsed ? "md:pl-[80px]" : "md:pl-[248px]"}`}>
-        <main className="pb-24 md:pb-0 min-h-screen">{children}</main>
+      <div className={`relative z-10 transition-all duration-300 ${collapsed ? "md:pl-[80px]" : "md:pl-[248px]"}`}>
+        <main key={pathname} className="page-enter pb-24 md:pb-0 min-h-screen">{children}</main>
       </div>
 
       {/* Mobile bottom nav */}

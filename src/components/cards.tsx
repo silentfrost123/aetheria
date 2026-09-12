@@ -376,7 +376,9 @@ export function ContinueCard({
       <div className="card-interactive p-3.5 flex items-center gap-3.5 h-full">
         <div className="relative shrink-0">
           <Avatar src={img} name={name} className="w-14 h-14" />
-          <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-success border-2 border-bg-card" />
+          <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-success border-2 border-bg-card">
+            <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-40" />
+          </span>
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
