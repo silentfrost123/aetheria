@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { isGoogleConfigured, googleAuthUrl } from "@/server/googleOAuth";
+import { isGoogleConfigured, googleAuthUrl, publicBaseUrl } from "@/server/googleOAuth";
 import { json } from "@/server/http";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   }
 
   const state = crypto.randomBytes(16).toString("hex");
-  const origin = new URL(req.url).origin;
+  const origin = publicBaseUrl(req);
   const redirectUri =
     process.env.GOOGLE_REDIRECT_URI || `${origin}/api/auth/google/callback`;
 

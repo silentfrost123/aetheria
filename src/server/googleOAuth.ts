@@ -7,6 +7,37 @@ export function isGoogleConfigured(): boolean {
   return !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 }
 
+/**
+ * Resolve the public base URL of the app (e.g. https://yourapp.up.railway.app).
+ *
+ * Order of precedence:
+ *   1. APP_URL env var (explicit override)
+ *   2. Derived from GOOGLE_REDIRECT_URI (strips /api/auth/google/callback)
+ *   3. The request's own origin (fallback — may be localhost behind a proxy)
+ *
+ * Behind a proxy (Railway/Heroku/etc.) `req.url` is often http://localhost:3000,
+ * so relying on it for redirects sends users to localhost. Hence the explicit
+ * env-driven resolution.
+ */
+export function publicBaseUrl(req?: Request): string {
+  const appUrl = process.env.APP_URL;
+  if (appUrl) return appUrl.replace(/\/+$/, "");
+
+  const redirect = process.env.GOOGLE_REDIRECT_URI;
+  if (redirect) {
+    const idx = redirect.indexOf("/api/auth/google/callback");
+    if (idx > 0) return redirect.slice(0, idx).replace(/\/+$/, "");
+    return redirect.replace(/\/+$/, "");
+  }
+
+  try {
+    if (req) return new URL(req.url).origin;
+  } catch {
+    /* ignore */
+  }
+  return "http://localhost:3000";
+}
+
 export function googleAuthUrl(redirectUri: string, state: string): string {
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,

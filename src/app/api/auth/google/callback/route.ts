@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   exchangeCode,
   fetchGoogleUser,
+  publicBaseUrl,
 } from "@/server/googleOAuth";
 import {
   findOrCreateGoogleUser,
@@ -20,7 +21,9 @@ export async function GET(req: Request) {
   const state = url.searchParams.get("state");
   const googleError = url.searchParams.get("error");
 
-  const origin = url.origin;
+  // Use the *public* origin (from env), never req.url's origin, which is
+  // http://localhost behind Railway's proxy and would bounce the user there.
+  const origin = publicBaseUrl(req);
   const base = `${origin}/auth`;
 
   const fail = (error: string) =>
