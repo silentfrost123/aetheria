@@ -28,14 +28,22 @@ export async function POST(req: Request) {
 
   const stamp = crypto.randomBytes(12).toString("hex");
   const email = `guest_${stamp}@guest.aetheria.dev`;
-  const username = `Guest${stamp.slice(0, 8)}`;
 
-  const res = createUser({
-    email,
-    username,
-    password: newId("pw") + newId("pw"),
-    ageVerified: true,
-  });
+  // Generate a username that is very unlikely to collide; the createUser path
+  // also guards against a collision (returns a friendly error rather than 500),
+  // so on the rare collision we retry with a fresh name.
+  let res: { user: any; error?: string } = { user: null };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const suffix = crypto.randomBytes(6).toString("hex");
+    const username = `Guest${suffix}`;
+    res = createUser({
+      email,
+      username,
+      password: newId("pw") + newId("pw"),
+      ageVerified: true,
+    });
+    if (res.user || !res.error) break;
+  }
   const user = res.user;
   if (!user) return json({ error: "Could not create guest session." }, 500);
 

@@ -170,6 +170,13 @@ export function getUserByEmail(email: string): User | null {
   return row ? ensureAdminFlag(mapUser(row)) : null;
 }
 
+export function getUserByUsername(username: string): User | null {
+  const row = db
+    .prepare("SELECT * FROM users WHERE lower(username) = lower(?)")
+    .get(username);
+  return row ? ensureAdminFlag(mapUser(row)) : null;
+}
+
 export function publicUser(user: User) {
   const { passwordHash, email, ...rest } = user;
   return { ...rest, email: user.email };
@@ -196,21 +203,38 @@ export function createUser(input: {
   if (getUserByEmail(email)) {
     return { user: null, error: "An account with this email already exists." };
   }
+  if (getUserByUsername(username)) {
+    return { user: null, error: "That username is already taken." };
+  }
 
   const id = newId("usr");
   const isAdmin = isAdminEmail(email) ? 1 : 0;
-  db.prepare(
-    `INSERT INTO users (id, email, username, password_hash, is_admin, age_verified, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    id,
-    email,
-    username,
-    hashPassword(input.password),
-    isAdmin,
-    input.ageVerified ? 1 : 0,
-    nowIso()
-  );
+  try {
+    db.prepare(
+      `INSERT INTO users (id, email, username, password_hash, is_admin, age_verified, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      id,
+      email,
+      username,
+      hashPassword(input.password),
+      isAdmin,
+      input.ageVerified ? 1 : 0,
+      nowIso()
+    );
+  } catch (e: any) {
+    // Defense in depth: handle a race where the username/email was claimed
+    // between the check above and the INSERT (concurrent registration).
+    if (String(e?.code).includes("SQLITE_CONSTRAINT")) {
+      return {
+        user: null,
+        error: getUserByEmail(email)
+          ? "An account with this email already exists."
+          : "That username is already taken.",
+      };
+    }
+    throw e;
+  }
 
   // Default persona for the new user
   db.prepare(
