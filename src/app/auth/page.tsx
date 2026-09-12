@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Icon } from "@/components/icons";
@@ -9,6 +9,11 @@ export default function AuthPage() {
   const { login, register } = useAuth();
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
+
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get("mode") === "register") setMode("register");
+  }, []);
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");

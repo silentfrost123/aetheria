@@ -43,6 +43,7 @@ export interface CharacterListFilter {
   sort?: "popular" | "recent" | "trending";
   creatorId?: string;
   includePrivate?: boolean;
+  storyOnly?: boolean;
 }
 
 export function listCharacters(filter: CharacterListFilter = {}): Character[] {
@@ -59,6 +60,9 @@ export function listCharacters(filter: CharacterListFilter = {}): Character[] {
   if (filter.genre) {
     clauses.push("tags LIKE ?");
     params.push(`%${filter.genre}%`);
+  }
+  if (filter.storyOnly) {
+    clauses.push("(lower(species) = 'story' OR lower(tags) LIKE '%story%')");
   }
   if (filter.gender) {
     clauses.push("lower(gender) = lower(?)");

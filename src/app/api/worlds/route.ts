@@ -1,8 +1,17 @@
 import { json, requireUser, readBody, error } from "@/server/http";
 import { listWorlds, createWorld } from "@/server/services/world";
 import { getEntriesForWorld } from "@/server/services/lore";
+import { listCharacters, getCreatorUsername } from "@/server/services/character";
+import { db } from "@/server/db";
 
 export const runtime = "nodejs";
+
+function characterCountForWorld(worldId: string): number {
+  const row = db
+    .prepare("SELECT COUNT(*) AS n FROM characters WHERE world_id = ?")
+    .get(worldId) as any;
+  return row?.n ?? 0;
+}
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -11,7 +20,18 @@ export async function GET(req: Request) {
     genre: url.searchParams.get("genre") || undefined,
     creatorId: url.searchParams.get("creator") || undefined,
   });
-  return json({ worlds });
+  return json({
+    worlds: worlds.map((w) => ({
+      id: w.id,
+      name: w.name,
+      description: w.description,
+      genre: w.genre,
+      artwork: w.artwork,
+      creator: { id: w.creatorId, username: getCreatorUsername(w.creatorId) },
+      characterCount: characterCountForWorld(w.id),
+      createdAt: w.createdAt,
+    })),
+  });
 }
 
 export async function POST(req: Request) {

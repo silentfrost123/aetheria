@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AppShell, PageHeader } from "@/components/AppShell";
+import { AppShell } from "@/components/AppShell";
 import { CharacterCard, WorldCard, ContinueCard, CharacterCardData } from "@/components/cards";
+import { SectionHeader, HScroll, CardSkeleton } from "@/components/ui";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { Icon } from "@/components/icons";
@@ -20,56 +21,28 @@ interface HomeData {
   isAuthed: boolean;
 }
 
-function SectionTitle({
-  title,
-  subtitle,
-  link,
-}: {
-  title: string;
-  subtitle?: string;
-  link?: { href: string; label: string };
-}) {
-  return (
-    <div className="flex items-end justify-between mb-4">
-      <div>
-        <h2 className="font-display text-lg font-bold tracking-tight">{title}</h2>
-        {subtitle && <p className="text-xs text-text-dim mt-0.5">{subtitle}</p>}
-      </div>
-      {link && (
-        <Link href={link.href} className="text-xs text-accent-soft hover:text-accent flex items-center gap-1">
-          {link.label} <Icon name="arrowRight" className="w-3.5 h-3.5" />
-        </Link>
-      )}
-    </div>
-  );
-}
-
-function HScroll({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
-      {children}
-    </div>
-  );
-}
-
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [data, setData] = useState<HomeData | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    apiFetch<HomeData>("/api/home").then(setData).catch(() => setData(null));
+    apiFetch<HomeData>("/api/home")
+      .then(setData)
+      .catch(() => setData(null))
+      .finally(() => setReady(true));
   }, [user]);
 
   const featured = data?.featured;
 
   return (
     <AppShell>
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 pb-16">
         {/* Hero */}
-        <section className="relative overflow-hidden rounded-3xl border border-border bg-bg-soft">
+        <section className="relative overflow-hidden rounded-3xl border border-border bg-bg-soft mt-6">
           <div className="absolute inset-0 bg-hero-gradient" />
-          <div className="relative grid md:grid-cols-2 gap-6 p-8 md:p-12 items-center">
+          <div className="relative grid md:grid-cols-2 gap-6 p-7 md:p-12 items-center">
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 text-xs font-semibold text-accent-soft bg-accent/10 border border-accent/20 rounded-full px-3 py-1">
                 <Icon name="spark" className="w-3.5 h-3.5" /> A LIVING, PERSISTENT WORLD
@@ -80,16 +53,13 @@ export default function Home() {
                 <span className="gradient-text">THAT REMEMBERS YOU.</span>
               </h1>
               <p className="text-text-dim max-w-md leading-relaxed">
-                Chat with characters who have real personalities. Build worlds with their
-                own lore. Every choice matters — and nothing is ever forgotten.
+                Chat with characters who have real personalities. Build worlds with their own
+                lore. Every choice matters — and nothing is ever forgotten.
               </p>
               <div className="flex flex-wrap gap-3">
                 {featured && (
-                  <button
-                    onClick={() => router.push(`/characters/${featured.id}`)}
-                    className="btn-primary"
-                  >
-                    Start Story
+                  <button onClick={() => router.push(`/characters/${featured.id}`)} className="btn-primary">
+                    <Icon name="play" className="w-4 h-4" /> Start Story
                   </button>
                 )}
                 <Link href="/discover" className="btn-ghost">
@@ -120,22 +90,28 @@ export default function Home() {
                     {featured.name[0]}
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
                 <div className="absolute bottom-0 inset-x-0 p-6">
                   <div className="font-display text-2xl font-bold">{featured.name}</div>
-                  <p className="text-sm text-white/70 line-clamp-2 mt-1">
-                    {featured.shortDescription}
-                  </p>
+                  <p className="text-sm text-white/70 line-clamp-2 mt-1">{featured.shortDescription}</p>
                 </div>
               </Link>
             )}
           </div>
         </section>
 
+        {!ready && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <CardSkeleton key={i} />
+            ))}
+          </div>
+        )}
+
         {/* Continue playing */}
         {data?.continuePlaying && data.continuePlaying.length > 0 && (
           <section className="mt-12">
-            <SectionTitle
+            <SectionHeader
               title="Continue Playing"
               subtitle="Pick up where you left off"
               link={{ href: "/chats", label: "All chats" }}
@@ -151,14 +127,15 @@ export default function Home() {
         {/* Recommended */}
         {data?.recommended && data.recommended.length > 0 && (
           <section className="mt-12">
-            <SectionTitle
-              title="Recommended for you"
+            <SectionHeader
+              title={data.isAuthed ? "Recommended for you" : "Recommended"}
               subtitle="Characters the community loves right now"
               link={{ href: "/discover", label: "Discover more" }}
+              icon="compass"
             />
             <HScroll>
               {data.recommended.map((c) => (
-                <div key={c.id} className="w-44 shrink-0 snap-start">
+                <div key={c.id} className="w-40 md:w-44 shrink-0 snap-start">
                   <CharacterCard char={c} compact />
                 </div>
               ))}
@@ -169,9 +146,10 @@ export default function Home() {
         {/* Trending + Worlds */}
         <section className="mt-12 grid md:grid-cols-2 gap-10">
           <div>
-            <SectionTitle
+            <SectionHeader
               title="Trending characters"
               link={{ href: "/discover?sort=popular", label: "See all" }}
+              icon="fire"
             />
             <div className="grid grid-cols-2 gap-4">
               {(data?.trending || []).slice(0, 4).map((c) => (
@@ -180,9 +158,10 @@ export default function Home() {
             </div>
           </div>
           <div>
-            <SectionTitle
+            <SectionHeader
               title="Popular worlds"
               link={{ href: "/worlds", label: "Explore worlds" }}
+              icon="globe"
             />
             <div className="grid grid-cols-1 gap-4">
               {(data?.worlds || []).slice(0, 3).map((w) => (
@@ -195,13 +174,13 @@ export default function Home() {
         {/* Recently created */}
         {data?.recentlyCreated && data.recentlyCreated.length > 0 && (
           <section className="mt-12">
-            <SectionTitle
+            <SectionHeader
               title="Recently created"
               link={{ href: "/discover?sort=recent", label: "New arrivals" }}
             />
             <HScroll>
               {data.recentlyCreated.map((c) => (
-                <div key={c.id} className="w-44 shrink-0 snap-start">
+                <div key={c.id} className="w-40 md:w-44 shrink-0 snap-start">
                   <CharacterCard char={c} compact />
                 </div>
               ))}
@@ -211,7 +190,7 @@ export default function Home() {
 
         {/* Genres */}
         <section className="mt-12 mb-8">
-          <SectionTitle title="Browse by genre" />
+          <SectionHeader title="Browse by genre" />
           <div className="flex flex-wrap gap-2">
             {(data?.genres || []).map((g) => (
               <Link

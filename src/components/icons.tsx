@@ -162,6 +162,90 @@ export function Icon({ name, className = "w-5 h-5" }: { name: string; className?
         <path d="m15 9-2 5-5 2 2-5z" fill="currentColor" />
       </>
     ),
+    search: (
+      <>
+        <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" fill="none" />
+        <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </>
+    ),
+    fire: (
+      <path d="M12 3c1 3-1 4.5-2.5 6S7 12.5 7 15a5 5 0 0 0 10 0c0-2-1-3.5-2-5-1 1.5-1.5 2-2 2 0-3 1-6-1-9z" fill="currentColor" />
+    ),
+    filter: (
+      <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    ),
+    chevronDown: (
+      <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    ),
+    chevronLeft: (
+      <path d="m15 6-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    ),
+    chevronRight: (
+      <path d="m9 6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    ),
+    users: (
+      <>
+        <circle cx="9" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.8" fill="none" />
+        <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+        <path d="M16 5.5a3 3 0 0 1 0 5.5M21 20c0-2.8-1.9-5.1-4.5-5.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" fill="none" />
+      </>
+    ),
+    tag: (
+      <>
+        <path d="M3 3h8l10 10-8 8L3 11z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+        <circle cx="7.5" cy="7.5" r="1.4" fill="currentColor" />
+      </>
+    ),
+    clock: (
+      <>
+        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.8" fill="none" />
+        <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </>
+    ),
+    book: (
+      <>
+        <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+        <path d="M4 19V5M19 3v16" stroke="currentColor" strokeWidth="1.8" fill="none" />
+      </>
+    ),
+    globe: (
+      <>
+        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" fill="none" />
+        <path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9S14.5 18.5 12 21c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z" stroke="currentColor" strokeWidth="1.6" fill="none" />
+      </>
+    ),
+    layers: (
+      <>
+        <path d="m12 3 9 5-9 5-9-5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+        <path d="m3 13 9 5 9-5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+      </>
+    ),
+    grid: (
+      <>
+        <rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.7" fill="none" />
+        <rect x="13" y="4" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.7" fill="none" />
+        <rect x="4" y="13" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.7" fill="none" />
+        <rect x="13" y="13" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.7" fill="none" />
+      </>
+    ),
+    plus: (
+      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    ),
+    sparkle: (
+      <path d="M12 2c.6 3.8 1.9 5.4 6 6-4.1.6-5.4 2.2-6 6-.6-3.8-1.9-5.4-6-6 4.1-.6 5.4-2.2 6-6zM19 14c.3 1.9 1 2.7 3 3-2 .3-2.7 1.1-3 3-.3-1.9-1-2.7-3-3 2-.3 2.7-1.1 3-3z" fill="currentColor" />
+    ),
+    external: (
+      <>
+        <path d="M14 4h6v6M20 4 10 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <path d="M20 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+      </>
+    ),
+    thumbUp: (
+      <>
+        <path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+        <path d="M7 11l4-7c1 0 2 .8 2 2v3h5a2 2 0 0 1 2 2.2l-1 6A2 2 0 0 1 17 19h-9" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+      </>
+    ),
   };
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">

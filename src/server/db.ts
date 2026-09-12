@@ -2,6 +2,7 @@ import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
 import { MIGRATIONS } from "./schema";
+import { seedIfEmpty } from "./seed";
 
 const DB_PATH =
   process.env.DATABASE_PATH || path.join(process.cwd(), "data", "aetheria.db");
@@ -63,18 +64,18 @@ export function getDb(): Database.Database {
     global.__db = createDb();
 
     // Seed demo content on the first real database access at RUNTIME.
-    // Skipped during `next build`: page-data collection imports route modules
-    // in parallel worker processes, and touching SQLite there causes
-    // SQLITE_BUSY lock contention on a fresh container.
+    // Done synchronously so the very first request already sees content
+    // (no empty-state flash on a fresh container). Skipped during
+    // `next build`: page-data collection imports route modules in parallel
+    // worker processes, and touching SQLite there causes SQLITE_BUSY lock
+    // contention on a fresh container.
     if (!isBuildPhase() && !global.__dbSeedScheduled) {
       global.__dbSeedScheduled = true;
-      import("./seed")
-        .then(({ seedIfEmpty }) => {
-          if (seedIfEmpty()) console.log("[db] auto-seeded demo content");
-        })
-        .catch((e) => {
-          console.error("[db] seed skipped:", e?.message || e);
-        });
+      try {
+        if (seedIfEmpty()) console.log("[db] auto-seeded demo content");
+      } catch (e) {
+        console.error("[db] seed skipped:", (e as Error)?.message || e);
+      }
     }
   }
   return global.__db;

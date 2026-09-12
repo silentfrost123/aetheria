@@ -6,14 +6,15 @@ import { useState, ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { Icon } from "./icons";
 
-const NAV = [
+type NavItem = { href: string; label: string; icon: string };
+
+const PRIMARY_NAV: NavItem[] = [
   { href: "/", label: "Home", icon: "home" },
   { href: "/discover", label: "Discover", icon: "discover" },
-  { href: "/characters", label: "Characters", icon: "characters" },
-  { href: "/stories", label: "Stories", icon: "story" },
-  { href: "/worlds", label: "Worlds", icon: "world" },
-  { href: "/create", label: "Create", icon: "create" },
   { href: "/chats", label: "Chats", icon: "chat" },
+];
+
+const SECONDARY_NAV: NavItem[] = [
   { href: "/library", label: "Library", icon: "library" },
   { href: "/following", label: "Following", icon: "following" },
   { href: "/notifications", label: "Notifications", icon: "bell" },
@@ -21,7 +22,7 @@ const NAV = [
   { href: "/settings", label: "Settings", icon: "settings" },
 ];
 
-const MOBILE_NAV = [
+const MOBILE_NAV: NavItem[] = [
   { href: "/", label: "Home", icon: "home" },
   { href: "/discover", label: "Discover", icon: "discover" },
   { href: "/create", label: "Create", icon: "create" },
@@ -29,49 +30,111 @@ const MOBILE_NAV = [
   { href: "/profile", label: "Profile", icon: "profile" },
 ];
 
+function NavLink({
+  item,
+  active,
+  collapsed,
+  emphasize = false,
+}: {
+  item: NavItem;
+  active: boolean;
+  collapsed: boolean;
+  emphasize?: boolean;
+}) {
+  if (emphasize) {
+    return (
+      <Link
+        href={item.href}
+        className="flex items-center justify-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-white bg-gradient-to-br from-accent to-accent-deep border border-accent-soft/40 shadow-glow-sm hover:brightness-110 transition-all"
+        title={collapsed ? item.label : undefined}
+      >
+        <Icon name={item.icon} className="w-5 h-5 shrink-0" />
+        {!collapsed && <span>{item.label}</span>}
+      </Link>
+    );
+  }
+  return (
+    <Link
+      href={item.href}
+      className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+        active
+          ? "bg-accent/15 text-accent-soft"
+          : "text-text-dim hover:bg-white/5 hover:text-text"
+      }`}
+      title={collapsed ? item.label : undefined}
+      aria-current={active ? "page" : undefined}
+    >
+      {active && (
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-accent-soft" />
+      )}
+      <Icon name={item.icon} className="w-5 h-5 shrink-0" />
+      {!collapsed && <span>{item.label}</span>}
+    </Link>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const { user } = useAuth();
+
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
 
   return (
     <div className="min-h-screen bg-bg">
       {/* Desktop sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 hidden md:flex flex-col border-r border-border-soft bg-bg-soft/80 backdrop-blur-xl transition-all duration-300 ${
-          collapsed ? "w-[76px]" : "w-[236px]"
+          collapsed ? "w-[80px]" : "w-[248px]"
         }`}
       >
+        {/* Brand */}
         <div className="flex items-center gap-3 px-4 h-16 border-b border-border-soft">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent-pink flex items-center justify-center shrink-0">
-            <Icon name="spark" className="w-5 h-5 text-white" />
-          </div>
-          {!collapsed && (
-            <Link href="/" className="font-display font-bold text-lg tracking-tight">
-              Aetheria
-            </Link>
-          )}
+          <Link href="/" className="flex items-center gap-3 shrink-0" aria-label="Aetheria home">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent-pink flex items-center justify-center shadow-glow-sm">
+              <Icon name="spark" className="w-5 h-5 text-white" />
+            </div>
+            {!collapsed && (
+              <span className="font-display font-bold text-lg tracking-tight">Aetheria</span>
+            )}
+          </Link>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
-          {NAV.map((item) => {
-            const active = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-accent/15 text-accent-soft"
-                    : "text-text-dim hover:bg-white/5 hover:text-text"
-                }`}
-                title={collapsed ? item.label : undefined}
-              >
-                <Icon name={item.icon} className="w-5 h-5 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+          {/* Primary */}
+          <div className="space-y-1">
+            {!collapsed && (
+              <div className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-text-faint">
+                Explore
+              </div>
+            )}
+            {PRIMARY_NAV.map((item) => (
+              <NavLink key={item.href} item={item} active={isActive(item.href)} collapsed={collapsed} />
+            ))}
+
+            {/* Create — emphasized CTA */}
+            <div className="pt-2">
+              <NavLink
+                item={{ href: "/create", label: "Create", icon: "create" }}
+                active={isActive("/create")}
+                collapsed={collapsed}
+                emphasize
+              />
+            </div>
+          </div>
+
+          {/* Secondary */}
+          <div className="space-y-1">
+            {!collapsed && (
+              <div className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-text-faint">
+                You
+              </div>
+            )}
+            {SECONDARY_NAV.map((item) => (
+              <NavLink key={item.href} item={item} active={isActive(item.href)} collapsed={collapsed} />
+            ))}
+          </div>
         </nav>
 
         <div className="p-3 border-t border-border-soft">
@@ -92,7 +155,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           ) : (
             !collapsed && (
-              <Link href="/auth" className="btn-primary w-full text-center block text-sm">
+              <Link href="/auth" className="btn-primary w-full text-sm">
                 Sign in
               </Link>
             )
@@ -100,7 +163,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button
             onClick={() => setCollapsed((c) => !c)}
             className="mt-2 w-full flex items-center justify-center rounded-lg py-1.5 text-text-faint hover:text-text hover:bg-white/5 transition-colors"
-            title="Toggle sidebar"
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             <Icon name={collapsed ? "arrowRight" : "back"} className="w-4 h-4" />
           </button>
@@ -108,23 +172,34 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main */}
-      <div className={`transition-all duration-300 ${collapsed ? "md:pl-[76px]" : "md:pl-[236px]"}`}>
-        <main className="pb-20 md:pb-0 min-h-screen">{children}</main>
+      <div className={`transition-all duration-300 ${collapsed ? "md:pl-[80px]" : "md:pl-[248px]"}`}>
+        <main className="pb-24 md:pb-0 min-h-screen">{children}</main>
       </div>
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 glass border-t border-border-soft flex items-stretch justify-around">
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 glass border-t border-border-soft flex items-stretch justify-around"
+        aria-label="Primary navigation"
+      >
         {MOBILE_NAV.map((item) => {
-          const active = pathname === item.href;
+          const active = isActive(item.href);
+          const isCreate = item.href === "/create";
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-1 py-2 px-3 text-[10px] font-medium ${
+              aria-current={active ? "page" : undefined}
+              className={`flex flex-col items-center justify-center gap-1 flex-1 py-2.5 px-2 text-[10px] font-medium transition-colors ${
                 active ? "text-accent-soft" : "text-text-faint"
               }`}
             >
-              <Icon name={item.icon} className="w-5 h-5" />
+              {isCreate ? (
+                <span className="w-9 h-9 -mt-2 rounded-full bg-gradient-to-br from-accent to-accent-deep flex items-center justify-center shadow-glow-sm">
+                  <Icon name="create" className="w-5 h-5 text-white" />
+                </span>
+              ) : (
+                <Icon name={item.icon} className="w-5 h-5" />
+              )}
               {item.label}
             </Link>
           );
@@ -138,18 +213,23 @@ export function PageHeader({
   title,
   subtitle,
   action,
+  icon,
 }: {
   title: string;
   subtitle?: string;
   action?: ReactNode;
+  icon?: string;
 }) {
   return (
-    <div className="flex items-end justify-between mb-6">
-      <div>
-        <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight">{title}</h1>
+    <div className="flex items-end justify-between gap-4 mb-6">
+      <div className="min-w-0">
+        <h1 className="flex items-center gap-2.5 font-display text-2xl md:text-3xl font-bold tracking-tight">
+          {icon && <Icon name={icon} className="w-6 h-6 text-accent-soft" />}
+          {title}
+        </h1>
         {subtitle && <p className="text-text-dim mt-1 text-sm">{subtitle}</p>}
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }

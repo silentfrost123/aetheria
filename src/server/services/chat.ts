@@ -86,9 +86,7 @@ export function createConversation(input: {
   return loadConversationRow(id)!;
 }
 
-function loadConversationRow(id: string): Conversation | null {
-  const row = db.prepare("SELECT * FROM conversations WHERE id = ?").get(id) as any;
-  if (!row) return null;
+function mapConversationRow(row: any): Conversation {
   return {
     id: row.id,
     userId: row.user_id,
@@ -105,6 +103,12 @@ function loadConversationRow(id: string): Conversation | null {
   };
 }
 
+function loadConversationRow(id: string): Conversation | null {
+  const row = db.prepare("SELECT * FROM conversations WHERE id = ?").get(id) as any;
+  if (!row) return null;
+  return mapConversationRow(row);
+}
+
 export function getConversation(id: string, userId?: string): Conversation | null {
   const conv = loadConversationRow(id);
   if (!conv) return null;
@@ -118,7 +122,7 @@ export function listConversations(userId: string): Conversation[] {
       "SELECT * FROM conversations WHERE user_id = ? ORDER BY last_message_at DESC"
     )
     .all(userId) as any[];
-  return rows.map(loadConversationRow).filter(Boolean) as Conversation[];
+  return rows.map(mapConversationRow);
 }
 
 export function getActiveBranch(conversationId: string): { id: string; name: string } {
