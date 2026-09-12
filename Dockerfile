@@ -31,16 +31,24 @@ ENV PORT=3000
 # Persistent SQLite location (mount a volume here)
 ENV DATABASE_PATH=/app/data/aetheria.db
 
+# gosu: drop privileges at runtime after fixing volume ownership.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends gosu \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.mjs ./next.config.mjs
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
 
-RUN mkdir -p /app/data \
-  && useradd --system --uid 1001 --create-home --home-dir /app app \
+RUN useradd --system --uid 1001 --create-home --home-dir /app app \
+  && mkdir -p /app/data \
   && chown -R app:app /app
-USER app
+
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 3000
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["npm", "start"]
