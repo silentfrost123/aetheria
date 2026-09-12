@@ -16,7 +16,7 @@ export const DUMMY_HASH = bcrypt.hashSync("aetheria-timing-equalizer", 12);
 // Emails that are treated as site administrators. Comma-separated. Matching
 // accounts are auto-promoted (is_admin=1) on login/registration so the flag
 // can never be lost, and this list is the single source of truth.
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "mustafasannar99@gmail.com")
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "mustafasammar99@gmail.com")
   .split(",")
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
