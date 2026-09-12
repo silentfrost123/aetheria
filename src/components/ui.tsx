@@ -255,3 +255,96 @@ export function formatCount(n?: number): string {
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "K";
   return String(n);
 }
+
+/* ------------------------------------------------------------------ */
+/* Toggle switch                                                       */
+/* ------------------------------------------------------------------ */
+export function Toggle({
+  checked,
+  onChange,
+  label,
+  description,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label?: string;
+  description?: string;
+}) {
+  return (
+    <label className="flex items-start gap-3 cursor-pointer select-none group">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+        className={`relative mt-0.5 shrink-0 w-10 h-6 rounded-full transition-colors ${
+          checked ? "bg-accent" : "bg-bg-hover border border-border"
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+            checked ? "translate-x-4" : ""
+          }`}
+        />
+      </button>
+      {(label || description) && (
+        <span className="min-w-0">
+          {label && <span className="block text-sm font-medium text-text">{label}</span>}
+          {description && (
+            <span className="block text-xs text-text-faint mt-0.5 leading-relaxed">
+              {description}
+            </span>
+          )}
+        </span>
+      )}
+    </label>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Labeled slider                                                      */
+/* ------------------------------------------------------------------ */
+export function Slider({
+  value,
+  onChange,
+  min = 0,
+  max = 1,
+  step = 0.05,
+  label,
+  hint,
+  format,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  label?: string;
+  hint?: string;
+  format?: (v: number) => string;
+}) {
+  return (
+    <div>
+      {label && (
+        <div className="flex justify-between items-baseline mb-1.5">
+          <span className="text-sm font-medium text-text">{label}</span>
+          <span className="text-xs text-accent-soft font-semibold tabular-nums">
+            {format ? format(value) : value}
+          </span>
+        </div>
+      )}
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="w-full"
+        aria-label={label}
+      />
+      {hint && <p className="text-[11px] text-text-faint mt-1">{hint}</p>}
+    </div>
+  );
+}

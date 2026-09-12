@@ -258,8 +258,12 @@ export async function runGeneration(
 
   const input: GenerateInput = {
     messages,
+    model: conversation.settings?.model || undefined,
     temperature:
-      opts.temperature ?? conversation.settings?.temperature ?? 0.85,
+      opts.temperature ??
+      conversation.settings?.temperature ??
+      conversation.settings?.creativity ??
+      0.85,
     maxTokens: 900,
   };
 
@@ -313,7 +317,11 @@ export function generateStreaming(
   const provider = getProvider();
   const input: GenerateInput = {
     messages,
-    temperature: conversation.settings?.temperature ?? 0.85,
+    model: conversation.settings?.model || undefined,
+    temperature:
+      conversation.settings?.temperature ??
+      conversation.settings?.creativity ??
+      0.85,
     maxTokens: 900,
   };
 

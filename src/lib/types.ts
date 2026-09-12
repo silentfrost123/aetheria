@@ -19,9 +19,20 @@ export interface User {
 export interface UserSettings {
   responseLength: "short" | "medium" | "long" | "very_long" | "adaptive";
   narrationLevel: number; // 0-1
-  defaultModel?: string;
+  creativity: number; // 0-1 (temperature)
+  defaultModel?: string; // "" = provider default
+  useMemory: boolean;
+  useLorebook: boolean;
   autoSummary: boolean;
   aiSuggestions: boolean;
+  autoImageGen: boolean;
+  // Appearance
+  fontScale: "sm" | "md" | "lg";
+  reduceMotion: boolean;
+  // Notifications
+  emailNotifications: boolean;
+  newFollowerNotifications: boolean;
+  replyNotifications: boolean;
 }
 
 export interface Persona {

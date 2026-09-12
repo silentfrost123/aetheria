@@ -2,6 +2,8 @@ import { json, requireUser } from "@/server/http";
 import {
   getBalance,
   canClaimDaily,
+  getStreak,
+  streakBonus,
   listTransactions,
   DAILY_POINTS,
   MESSAGE_COST,
@@ -16,6 +18,8 @@ export async function GET(req: Request) {
   return json({
     balance: getBalance(user.id),
     canClaim: canClaimDaily(user.id),
+    streak: getStreak(user.id),
+    nextStreakBonus: streakBonus(getStreak(user.id) + 1),
     transactions: listTransactions(user.id, 30),
     config: {
       dailyPoints: DAILY_POINTS,

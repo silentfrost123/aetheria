@@ -196,3 +196,9 @@ export function updateUserSettings(userId: string, settings: Record<string, unkn
 export function verifyAge(userId: string): void {
   db.prepare("UPDATE users SET age_verified = 1 WHERE id = ?").run(userId);
 }
+
+export function deleteUser(userId: string): void {
+  // Most child tables cascade on users(id) ON DELETE CASCADE; a few reference
+  // users via a nullable FK (SET NULL), which is fine. Point tables cascade too.
+  db.prepare("DELETE FROM users WHERE id = ?").run(userId);
+}

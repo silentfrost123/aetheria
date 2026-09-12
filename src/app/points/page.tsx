@@ -39,11 +39,12 @@ function fmtDate(iso: string): string {
 
 export default function PointsPage() {
   const { user } = useAuth();
-  const { balance, canClaim, config, refresh, claimDaily, redeem } = usePoints();
+  const { balance, canClaim, streak, config, claimDaily, redeem } = usePoints();
   const router = useRouter();
 
   const [transactions, setTransactions] = useState<Tx[]>([]);
   const [claiming, setClaiming] = useState(false);
+  const [claimMsg, setClaimMsg] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [redeeming, setRedeeming] = useState(false);
   const [redeemMsg, setRedeemMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -57,8 +58,16 @@ export default function PointsPage() {
 
   async function onClaim() {
     setClaiming(true);
+    setClaimMsg(null);
     try {
-      await claimDaily();
+      const r = await claimDaily();
+      if (r.claimed) {
+        setClaimMsg(
+          r.bonus > 0
+            ? `+${r.amount} claimed (${r.bonus} streak bonus) — ${r.streak}-day streak!`
+            : `+${r.amount} claimed!`
+        );
+      }
     } finally {
       setClaiming(false);
     }
@@ -119,22 +128,35 @@ export default function PointsPage() {
               <div className="text-sm text-text-dim mt-2">
                 ≈ {dailyMessages} message{dailyMessages === 1 ? "" : "s"} at {config.messageCost} points each
               </div>
+              {streak > 0 && (
+                <div className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-accent-amber bg-accent-amber/10 border border-accent-amber/20 rounded-full px-2.5 py-1">
+                  🔥 {streak}-day streak
+                </div>
+              )}
+              {claimMsg && (
+                <div className="text-sm text-success mt-2">{claimMsg}</div>
+              )}
             </div>
 
-            <button
-              onClick={onClaim}
-              disabled={claiming || !canClaim}
-              className={`btn-primary text-base ${
-                !canClaim ? "opacity-60 cursor-not-allowed" : ""
-              }`}
-            >
-              <Icon name="spark" className="w-4 h-4" />
-              {canClaim
-                ? claiming
-                  ? "Claiming…"
-                  : `Claim ${config.dailyPoints} daily points`
-                : "Daily bonus claimed"}
-            </button>
+            <div className="flex flex-col items-end gap-2">
+              <button
+                onClick={onClaim}
+                disabled={claiming || !canClaim}
+                className={`btn-primary text-base ${
+                  !canClaim ? "opacity-60 cursor-not-allowed" : ""
+                }`}
+              >
+                <Icon name="spark" className="w-4 h-4" />
+                {canClaim
+                  ? claiming
+                    ? "Claiming…"
+                    : `Claim ${config.dailyPoints}${streak > 0 ? ` +${Math.min(streak, 10) * 25} bonus` : ""}`
+                  : "Daily bonus claimed"}
+              </button>
+              <span className="text-[11px] text-text-faint">
+                Claim daily to build a streak for bonus points.
+              </span>
+            </div>
           </div>
         </div>
 
@@ -215,6 +237,10 @@ export default function PointsPage() {
                   <span className="text-accent-amber font-semibold">+{config.dailyPoints}</span>
                 </li>
                 <li className="flex justify-between">
+                  <span>Streak bonus</span>
+                  <span className="text-accent-amber font-semibold">+25/day (max +250)</span>
+                </li>
+                <li className="flex justify-between">
                   <span>Per AI message</span>
                   <span className="text-danger font-semibold">-{config.messageCost}</span>
                 </li>
@@ -225,7 +251,7 @@ export default function PointsPage() {
               </ul>
               <p className="text-[11px] text-text-faint mt-3 leading-relaxed">
                 Commands like /roll and /status are free. Every AI reply costs {config.messageCost}{" "}
-                points.
+                points. Keep claiming daily to grow your streak and earn up to +250 bonus points.
               </p>
             </div>
           </div>

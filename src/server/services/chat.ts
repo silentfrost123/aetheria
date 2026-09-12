@@ -6,6 +6,7 @@ import type {
   ChatSettings,
   ChatMode,
   StructuredResponse,
+  UserSettings,
 } from "@/lib/types";
 import { loadCharacter } from "./generation";
 import { addMemory } from "./memory";
@@ -30,15 +31,37 @@ export function createConversation(input: {
   const id = newId("con");
   const char = input.characterId ? loadCharacter(input.characterId) : null;
   const mode = input.mode || (char ? "character" : "story");
+
+  // Inherit the user's global preferences as defaults for this chat.
+  const userSettings = (() => {
+    try {
+      const u = db
+        .prepare("SELECT settings FROM users WHERE id = ?")
+        .get(input.userId) as any;
+      return u?.settings
+        ? safeParse<Partial<UserSettings>>(u.settings, {})
+        : ({} as Partial<UserSettings>);
+    } catch {
+      return {} as Partial<UserSettings>;
+    }
+  })();
+
   const settings: ChatSettings = {
-    responseLength: "medium",
-    narrationLevel: 0.6,
-    creativity: 0.85,
-    useMemory: true,
-    useLorebook: true,
-    autoImageGen: false,
-    autoSummary: true,
-    aiSuggestions: true,
+    responseLength: userSettings.responseLength || "medium",
+    narrationLevel:
+      typeof userSettings.narrationLevel === "number"
+        ? userSettings.narrationLevel
+        : 0.6,
+    creativity:
+      typeof userSettings.creativity === "number"
+        ? userSettings.creativity
+        : 0.85,
+    model: userSettings.defaultModel || undefined,
+    useMemory: userSettings.useMemory !== false,
+    useLorebook: userSettings.useLorebook !== false,
+    autoImageGen: userSettings.autoImageGen === true,
+    autoSummary: userSettings.autoSummary !== false,
+    aiSuggestions: userSettings.aiSuggestions !== false,
     ...input.settings,
   };
 

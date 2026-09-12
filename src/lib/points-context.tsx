@@ -20,9 +20,10 @@ interface PointsContextValue {
   balance: number;
   loading: boolean;
   canClaim: boolean;
+  streak: number;
   config: PointsConfig;
   refresh: () => Promise<void>;
-  claimDaily: () => Promise<{ claimed: boolean; amount: number; balance: number }>;
+  claimDaily: () => Promise<{ claimed: boolean; amount: number; bonus: number; streak: number; balance: number }>;
   redeem: (code: string) => Promise<{ ok: boolean; amount?: number; error?: string }>;
 }
 
@@ -35,6 +36,7 @@ export function PointsProvider({ children }: { children: ReactNode }) {
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [canClaim, setCanClaim] = useState(false);
+  const [streak, setStreak] = useState(0);
   const [config, setConfig] = useState<PointsConfig>(DEFAULT_CONFIG);
 
   const refresh = useCallback(async () => {
@@ -47,10 +49,12 @@ export function PointsProvider({ children }: { children: ReactNode }) {
       const d = await apiFetch<{
         balance: number;
         canClaim: boolean;
+        streak: number;
         config: PointsConfig;
       }>("/api/points");
       setBalance(d.balance);
       setCanClaim(d.canClaim);
+      setStreak(d.streak || 0);
       setConfig(d.config);
     } catch {
       /* ignore — keep last known */
@@ -65,11 +69,12 @@ export function PointsProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const claimDaily = useCallback(async () => {
-    const d = await apiFetch<{ claimed: boolean; amount: number; balance: number }>(
+    const d = await apiFetch<{ claimed: boolean; amount: number; bonus: number; streak: number; balance: number }>(
       "/api/points/claim",
       { method: "POST" }
     );
     setBalance(d.balance);
+    setStreak(d.streak);
     setCanClaim(false);
     return d;
   }, []);
@@ -88,7 +93,7 @@ export function PointsProvider({ children }: { children: ReactNode }) {
 
   return (
     <PointsContext.Provider
-      value={{ balance, loading, canClaim, config, refresh, claimDaily, redeem }}
+      value={{ balance, loading, canClaim, streak, config, refresh, claimDaily, redeem }}
     >
       {children}
     </PointsContext.Provider>

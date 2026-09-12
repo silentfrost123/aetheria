@@ -124,11 +124,28 @@ export function addPoints(
 }
 
 /* ------------------------------------------------------------------ */
-/* Daily claim                                                         */
+/* Daily claim + streaks                                               */
 /* ------------------------------------------------------------------ */
 function todayKey(): string {
   // UTC calendar day; deterministic across the fleet.
   return new Date().toISOString().slice(0, 10);
+}
+
+function yesterdayKey(): string {
+  const d = new Date(Date.now() - 86400000);
+  return d.toISOString().slice(0, 10);
+}
+
+export function streakBonus(streak: number): number {
+  // +25 per consecutive day, capped at +250 (streak 11+).
+  return Math.min(Math.max(streak - 1, 0), 10) * 25;
+}
+
+export function getStreak(userId: string): number {
+  const row = db
+    .prepare("SELECT streak FROM point_claims WHERE user_id = ?")
+    .get(userId) as any;
+  return row?.streak ?? 0;
 }
 
 export function canClaimDaily(userId: string): boolean {
@@ -141,25 +158,43 @@ export function canClaimDaily(userId: string): boolean {
 export interface ClaimResult {
   claimed: boolean;
   amount: number;
+  bonus: number;
+  streak: number;
   balance: number;
 }
 
 export function claimDaily(userId: string): ClaimResult {
   const tx = db.transaction((): ClaimResult => {
     if (!canClaimDaily(userId)) {
-      return { claimed: false, amount: 0, balance: getBalance(userId) };
+      return {
+        claimed: false,
+        amount: 0,
+        bonus: 0,
+        streak: getStreak(userId),
+        balance: getBalance(userId),
+      };
     }
+
+    const row = db
+      .prepare("SELECT last_claim_date, streak FROM point_claims WHERE user_id = ?")
+      .get(userId) as any;
+    const streak =
+      row && row.last_claim_date === yesterdayKey() ? (row.streak || 0) + 1 : 1;
+
     db.prepare(
-      `INSERT INTO point_claims (user_id, last_claim_date) VALUES (?, ?)
-       ON CONFLICT(user_id) DO UPDATE SET last_claim_date = excluded.last_claim_date`
-    ).run(userId, todayKey());
+      `INSERT INTO point_claims (user_id, last_claim_date, streak) VALUES (?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET last_claim_date = excluded.last_claim_date, streak = excluded.streak`
+    ).run(userId, todayKey(), streak);
+
+    const bonus = streakBonus(streak);
+    const amount = DAILY_POINTS + bonus;
     const balance = addPoints(
       userId,
-      DAILY_POINTS,
+      amount,
       "daily",
-      `Daily bonus`
+      `Daily bonus${bonus ? ` (${streak}-day streak)` : ""}`
     );
-    return { claimed: true, amount: DAILY_POINTS, balance };
+    return { claimed: true, amount, bonus, streak, balance };
   });
   return tx();
 }

@@ -1,6 +1,6 @@
 import { publicUser } from "@/server/auth";
 import { json, requireUser, readBody } from "@/server/http";
-import { updateUserSettings, verifyAge } from "@/server/auth";
+import { updateUserSettings, verifyAge, deleteUser } from "@/server/auth";
 
 export const runtime = "nodejs";
 
@@ -18,4 +18,11 @@ export async function PUT(req: Request) {
   if (body.ageVerified) verifyAge(user.id);
   const { getUserById } = await import("@/server/auth");
   return json({ user: publicUser(getUserById(user.id)!) });
+}
+
+export async function DELETE(req: Request) {
+  const user = requireUser(req);
+  if (!user) return json({ error: "Not authenticated." }, 401);
+  deleteUser(user.id);
+  return json({ ok: true });
 }

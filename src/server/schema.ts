@@ -378,4 +378,10 @@ export const MIGRATIONS: Migration[] = [
       );
     `,
   },
+  {
+    name: "009_point_streaks",
+    sql: `
+      ALTER TABLE point_claims ADD COLUMN streak INTEGER NOT NULL DEFAULT 0;
+    `,
+  },
 ];
