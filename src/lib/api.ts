@@ -7,6 +7,8 @@ export interface ApiUser {
   avatar?: string;
   bio?: string;
   plan: string;
+  isAdmin: boolean;
+  banned?: boolean;
   ageVerified: boolean;
   settings: any;
 }

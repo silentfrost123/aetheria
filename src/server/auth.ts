@@ -13,6 +13,18 @@ const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 // preventing a timing side-channel that would allow account enumeration.
 export const DUMMY_HASH = bcrypt.hashSync("aetheria-timing-equalizer", 12);
 
+// Emails that are treated as site administrators. Comma-separated. Matching
+// accounts are auto-promoted (is_admin=1) on login/registration so the flag
+// can never be lost, and this list is the single source of truth.
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "mustafasannar99@gmail.com")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+
+export function isAdminEmail(email: string): boolean {
+  return ADMIN_EMAILS.includes(String(email || "").trim().toLowerCase());
+}
+
 interface SessionRow {
   token: string;
   user_id: string;
@@ -90,7 +102,13 @@ export function getUserFromToken(token: string | null | undefined): User | null 
     db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
     return null;
   }
-  return getUserById(row.user_id);
+  const user = getUserById(row.user_id);
+  // Banned users are immediately signed out: reject the token and delete it.
+  if (user?.banned) {
+    db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
+    return null;
+  }
+  return user;
 }
 
 export function setSessionCookie(res: NextResponse, token: string): NextResponse {
@@ -122,21 +140,34 @@ function mapUser(row: any): User {
     plan: row.plan,
     isAdmin: !!row.is_admin,
     ageVerified: !!row.age_verified,
+    banned: !!row.banned,
     settings: safeParse(row.settings, {} as User["settings"]),
     createdAt: row.created_at,
   };
 }
 
+/**
+ * Auto-promote a user to admin when their email is in the admin list but the
+ * persisted flag is stale. Keeps the admin list authoritative and idempotent.
+ */
+function ensureAdminFlag(user: User): User {
+  if (isAdminEmail(user.email) && !user.isAdmin) {
+    db.prepare("UPDATE users SET is_admin = 1 WHERE id = ?").run(user.id);
+    return { ...user, isAdmin: true };
+  }
+  return user;
+}
+
 export function getUserById(id: string): User | null {
   const row = db.prepare("SELECT * FROM users WHERE id = ?").get(id);
-  return row ? mapUser(row) : null;
+  return row ? ensureAdminFlag(mapUser(row)) : null;
 }
 
 export function getUserByEmail(email: string): User | null {
   const row = db
     .prepare("SELECT * FROM users WHERE lower(email) = lower(?)")
     .get(email);
-  return row ? mapUser(row) : null;
+  return row ? ensureAdminFlag(mapUser(row)) : null;
 }
 
 export function publicUser(user: User) {
@@ -167,14 +198,16 @@ export function createUser(input: {
   }
 
   const id = newId("usr");
+  const isAdmin = isAdminEmail(email) ? 1 : 0;
   db.prepare(
-    `INSERT INTO users (id, email, username, password_hash, age_verified, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`
+    `INSERT INTO users (id, email, username, password_hash, is_admin, age_verified, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
   ).run(
     id,
     email,
     username,
     hashPassword(input.password),
+    isAdmin,
     input.ageVerified ? 1 : 0,
     nowIso()
   );

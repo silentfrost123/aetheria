@@ -384,4 +384,20 @@ export const MIGRATIONS: Migration[] = [
       ALTER TABLE point_claims ADD COLUMN streak INTEGER NOT NULL DEFAULT 0;
     `,
   },
+  {
+    name: "010_admin",
+    sql: `
+      ALTER TABLE users ADD COLUMN banned INTEGER NOT NULL DEFAULT 0;
+
+      CREATE TABLE IF NOT EXISTS admin_audit (
+        id TEXT PRIMARY KEY,
+        admin_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+        action TEXT NOT NULL,
+        target_user_id TEXT,
+        detail TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit(created_at);
+    `,
+  },
 ];

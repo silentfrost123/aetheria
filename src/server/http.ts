@@ -18,6 +18,17 @@ export function requireUser(req: Request): User | null {
   return getUserFromRequest(req);
 }
 
+/**
+ * Require an authenticated *and* admin user. Returns null (caller should
+ * respond 401/403) when the requester is missing, not an admin, or banned.
+ * This is the sole server-side gate for every admin endpoint.
+ */
+export function requireAdmin(req: Request): User | null {
+  const user = requireUser(req);
+  if (!user || !user.isAdmin) return null;
+  return user;
+}
+
 // Cap request bodies to prevent oversized payloads from consuming memory/CPU.
 const MAX_BODY_BYTES = 1_000_000; // 1 MB
 

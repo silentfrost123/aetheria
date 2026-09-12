@@ -12,6 +12,7 @@ export interface User {
   plan: "free" | "plus" | "pro" | "admin";
   isAdmin: boolean;
   ageVerified: boolean;
+  banned?: boolean;
   settings: UserSettings;
   createdAt: string;
 }

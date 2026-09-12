@@ -28,6 +28,10 @@ export async function POST(req: Request) {
     return error("Invalid email or password.", 401);
   }
 
+  if (user.banned) {
+    return error("This account has been suspended.", 403);
+  }
+
   const token = createSession(user.id);
   const res = json({ user: publicUser(user), token });
   return setSessionCookie(res, token);

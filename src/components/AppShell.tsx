@@ -155,6 +155,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                 badge={item.href === "/points" && user ? String(balance) : undefined}
               />
             ))}
+            {user?.isAdmin && (
+              <NavLink
+                item={{ href: "/admin", label: "Admin", icon: "settings" }}
+                active={isActive("/admin")}
+                collapsed={collapsed}
+              />
+            )}
           </div>
         </nav>
 
