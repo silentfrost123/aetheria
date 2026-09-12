@@ -3,12 +3,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { MIGRATIONS } from "./schema";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const DB_PATH = process.env.DATABASE_PATH || path.join(DATA_DIR, "aetheria.db");
+const DB_PATH =
+  process.env.DATABASE_PATH || path.join(process.cwd(), "data", "aetheria.db");
 
 declare global {
   // eslint-disable-next-line no-var
   var __db: Database.Database | undefined;
+  // eslint-disable-next-line no-var
+  var __dbSeedScheduled: boolean | undefined;
 }
 
 function ensureDir() {
@@ -24,7 +26,9 @@ function migrate(db: Database.Database) {
   )`);
 
   const applied = new Set(
-    db.prepare("SELECT name FROM _migrations").all().map((r: any) => r.name)
+    (db.prepare("SELECT name FROM _migrations").all() as any[]).map(
+      (r) => r.name
+    )
   );
 
   const tx = db.transaction(() => {
@@ -37,10 +41,18 @@ function migrate(db: Database.Database) {
   tx();
 }
 
+function isBuildPhase(): boolean {
+  // NEXT_PHASE is set only while `next build` / `next dev` is running.
+  // It is unset at real runtime (`next start`).
+  const phase = process.env.NEXT_PHASE || "";
+  return phase.includes("build");
+}
+
 function createDb(): Database.Database {
   ensureDir();
   const db = new Database(DB_PATH);
   db.pragma("journal_mode = WAL");
+  db.pragma("busy_timeout = 5000");
   db.pragma("foreign_keys = ON");
   migrate(db);
   return db;
@@ -49,23 +61,41 @@ function createDb(): Database.Database {
 export function getDb(): Database.Database {
   if (!global.__db) {
     global.__db = createDb();
+
+    // Seed demo content on the first real database access at RUNTIME.
+    // Skipped during `next build`: page-data collection imports route modules
+    // in parallel worker processes, and touching SQLite there causes
+    // SQLITE_BUSY lock contention on a fresh container.
+    if (!isBuildPhase() && !global.__dbSeedScheduled) {
+      global.__dbSeedScheduled = true;
+      import("./seed")
+        .then(({ seedIfEmpty }) => {
+          if (seedIfEmpty()) console.log("[db] auto-seeded demo content");
+        })
+        .catch((e) => {
+          console.error("[db] seed skipped:", e?.message || e);
+        });
+    }
   }
   return global.__db;
 }
 
-export const db = getDb();
-
-// Auto-seed demo content on a fresh database (e.g. a brand-new deployment).
-// Deferred to avoid a circular-import race with ./seed.
-setTimeout(() => {
-  import("./seed")
-    .then(({ seedIfEmpty }) => {
-      if (seedIfEmpty()) console.log("[db] auto-seeded demo content");
-    })
-    .catch(() => {
-      /* seeding is best-effort */
-    });
-}, 0);
+// Lazy database handle. We deliberately do NOT open SQLite at import time:
+// Next.js imports route modules during `next build` (page-data collection) in
+// parallel worker processes, and eagerly opening/migrating the database there
+// causes lock contention on a fresh container. This Proxy defers the real
+// Database access until a query is actually executed at runtime.
+//
+// Note: methods are bound to the real Database instance so `db.prepare(...)`
+// keeps its correct `this` (a plain Proxy get-trap that returns an unbound
+// method would break every query).
+export const db = new Proxy({} as Database.Database, {
+  get(_target, prop: string | symbol) {
+    const real = getDb();
+    const value = (real as any)[prop];
+    return typeof value === "function" ? value.bind(real) : value;
+  },
+});
 
 export function nowIso(): string {
   return new Date().toISOString();
