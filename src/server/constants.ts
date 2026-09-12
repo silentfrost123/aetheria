@@ -1,0 +1,17 @@
+export const GENRES = [
+  "Fantasy",
+  "Dark Fantasy",
+  "Romance",
+  "Sci-Fi",
+  "Cyberpunk",
+  "Horror",
+  "Mystery",
+  "Adventure",
+  "Slice of Life",
+  "Comedy",
+  "Action",
+  "RPG",
+  "Isekai",
+  "Supernatural",
+  "Historical",
+];

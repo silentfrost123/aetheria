@@ -1,0 +1,348 @@
+// Database schema migrations for Aetheria.
+// Each entry is applied in order and recorded in _migrations.
+
+export interface Migration {
+  name: string;
+  sql: string;
+}
+
+export const MIGRATIONS: Migration[] = [
+  {
+    name: "001_core_users",
+    sql: `
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        avatar TEXT,
+        bio TEXT,
+        plan TEXT NOT NULL DEFAULT 'free',
+        is_admin INTEGER NOT NULL DEFAULT 0,
+        age_verified INTEGER NOT NULL DEFAULT 0,
+        settings TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS sessions (
+        token TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+    `,
+  },
+  {
+    name: "002_personas",
+    sql: `
+      CREATE TABLE IF NOT EXISTS personas (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        age TEXT,
+        occupation TEXT,
+        personality TEXT NOT NULL DEFAULT '',
+        appearance TEXT NOT NULL DEFAULT '',
+        background TEXT NOT NULL DEFAULT '',
+        avatar TEXT,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_personas_user ON personas(user_id);
+    `,
+  },
+  {
+    name: "003_characters",
+    sql: `
+      CREATE TABLE IF NOT EXISTS characters (
+        id TEXT PRIMARY KEY,
+        creator_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+        name TEXT NOT NULL,
+        avatar TEXT,
+        banner TEXT,
+        age TEXT,
+        gender TEXT,
+        species TEXT,
+        occupation TEXT,
+        tags TEXT NOT NULL DEFAULT '[]',
+        short_description TEXT NOT NULL DEFAULT '',
+        public_description TEXT NOT NULL DEFAULT '',
+        greetings TEXT NOT NULL DEFAULT '[]',
+        is_public INTEGER NOT NULL DEFAULT 0,
+        allow_remix INTEGER NOT NULL DEFAULT 1,
+        visibility TEXT NOT NULL DEFAULT 'private',
+        definition TEXT NOT NULL DEFAULT '{}',
+        personality TEXT NOT NULL DEFAULT '{}',
+        world_id TEXT,
+        scenario_id TEXT,
+        remixed_from TEXT,
+        stats TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_characters_creator ON characters(creator_id);
+      CREATE INDEX IF NOT EXISTS idx_characters_public ON characters(is_public);
+    `,
+  },
+  {
+    name: "004_worlds_lore_scenarios_stories",
+    sql: `
+      CREATE TABLE IF NOT EXISTS worlds (
+        id TEXT PRIMARY KEY,
+        creator_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        genre TEXT NOT NULL DEFAULT '',
+        artwork TEXT,
+        timeline TEXT,
+        locations TEXT NOT NULL DEFAULT '[]',
+        factions TEXT NOT NULL DEFAULT '[]',
+        characters TEXT NOT NULL DEFAULT '[]',
+        creatures TEXT NOT NULL DEFAULT '[]',
+        items TEXT NOT NULL DEFAULT '[]',
+        magic_system TEXT,
+        technology TEXT,
+        politics TEXT,
+        history TEXT,
+        rules TEXT,
+        events TEXT NOT NULL DEFAULT '[]',
+        custom_lore TEXT NOT NULL DEFAULT '[]',
+        is_public INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS lore_entries (
+        id TEXT PRIMARY KEY,
+        world_id TEXT REFERENCES worlds(id) ON DELETE CASCADE,
+        character_id TEXT REFERENCES characters(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        keywords TEXT NOT NULL DEFAULT '[]',
+        aliases TEXT NOT NULL DEFAULT '[]',
+        content TEXT NOT NULL DEFAULT '',
+        priority INTEGER NOT NULL DEFAULT 5,
+        enabled INTEGER NOT NULL DEFAULT 1,
+        always_active INTEGER NOT NULL DEFAULT 0,
+        activation_probability REAL NOT NULL DEFAULT 0.75,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_lore_world ON lore_entries(world_id);
+      CREATE INDEX IF NOT EXISTS idx_lore_character ON lore_entries(character_id);
+
+      CREATE TABLE IF NOT EXISTS scenarios (
+        id TEXT PRIMARY KEY,
+        creator_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        location TEXT NOT NULL DEFAULT '',
+        time TEXT NOT NULL DEFAULT '',
+        situation TEXT NOT NULL DEFAULT '',
+        characters TEXT NOT NULL DEFAULT '[]',
+        starting_conditions TEXT NOT NULL DEFAULT '',
+        objectives TEXT NOT NULL DEFAULT '',
+        rules TEXT NOT NULL DEFAULT '',
+        is_public INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS stories (
+        id TEXT PRIMARY KEY,
+        creator_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+        title TEXT NOT NULL,
+        cover TEXT,
+        description TEXT NOT NULL DEFAULT '',
+        genre TEXT NOT NULL DEFAULT '',
+        world_id TEXT REFERENCES worlds(id) ON DELETE SET NULL,
+        characters TEXT NOT NULL DEFAULT '[]',
+        is_public INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+      );
+    `,
+  },
+  {
+    name: "005_conversations_branches_messages",
+    sql: `
+      CREATE TABLE IF NOT EXISTS conversations (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        character_id TEXT REFERENCES characters(id) ON DELETE SET NULL,
+        persona_id TEXT REFERENCES personas(id) ON DELETE SET NULL,
+        world_id TEXT REFERENCES worlds(id) ON DELETE SET NULL,
+        scenario_id TEXT REFERENCES scenarios(id) ON DELETE SET NULL,
+        title TEXT NOT NULL DEFAULT 'New story',
+        mode TEXT NOT NULL DEFAULT 'character',
+        settings TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        last_message_at TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_conversations_user ON conversations(user_id);
+
+      CREATE TABLE IF NOT EXISTS branches (
+        id TEXT PRIMARY KEY,
+        conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        parent_message_id TEXT,
+        name TEXT NOT NULL DEFAULT 'main',
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_branches_conversation ON branches(conversation_id);
+
+      CREATE TABLE IF NOT EXISTS messages (
+        id TEXT PRIMARY KEY,
+        conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        branch_id TEXT NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
+        role TEXT NOT NULL,
+        content TEXT NOT NULL DEFAULT '',
+        structured TEXT,
+        model TEXT,
+        parent_id TEXT,
+        is_canonical INTEGER NOT NULL DEFAULT 1,
+        swipes TEXT NOT NULL DEFAULT '[]',
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at);
+      CREATE INDEX IF NOT EXISTS idx_messages_branch ON messages(branch_id, created_at);
+    `,
+  },
+  {
+    name: "006_memory_relationship_state",
+    sql: `
+      CREATE TABLE IF NOT EXISTS memories (
+        id TEXT PRIMARY KEY,
+        conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        character_id TEXT REFERENCES characters(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type TEXT NOT NULL DEFAULT 'event',
+        importance REAL NOT NULL DEFAULT 0.5,
+        content TEXT NOT NULL,
+        participants TEXT NOT NULL DEFAULT '[]',
+        location TEXT,
+        emotional_impact TEXT,
+        is_pinned INTEGER NOT NULL DEFAULT 0,
+        is_important INTEGER NOT NULL DEFAULT 0,
+        source TEXT NOT NULL DEFAULT 'auto',
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_memories_conversation ON memories(conversation_id);
+      CREATE INDEX IF NOT EXISTS idx_memories_character ON memories(character_id);
+
+      CREATE TABLE IF NOT EXISTS relationships (
+        id TEXT PRIMARY KEY,
+        conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        character_id TEXT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        stage TEXT NOT NULL DEFAULT 'Acquaintance',
+        trust INTEGER NOT NULL DEFAULT 50,
+        affection INTEGER NOT NULL DEFAULT 40,
+        respect INTEGER NOT NULL DEFAULT 45,
+        fear INTEGER NOT NULL DEFAULT 0,
+        attraction INTEGER NOT NULL DEFAULT 0,
+        loyalty INTEGER NOT NULL DEFAULT 30,
+        familiarity INTEGER NOT NULL DEFAULT 0,
+        suspicion INTEGER NOT NULL DEFAULT 0,
+        history TEXT NOT NULL DEFAULT '[]',
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_relationships_conversation ON relationships(conversation_id);
+
+      CREATE TABLE IF NOT EXISTS world_state (
+        id TEXT PRIMARY KEY,
+        conversation_id TEXT NOT NULL UNIQUE REFERENCES conversations(id) ON DELETE CASCADE,
+        world_id TEXT,
+        date TEXT NOT NULL DEFAULT 'Day 1',
+        time_of_day TEXT NOT NULL DEFAULT 'morning',
+        season TEXT NOT NULL DEFAULT 'spring',
+        weather TEXT NOT NULL DEFAULT 'clear',
+        current_location TEXT NOT NULL DEFAULT '',
+        npc_locations TEXT NOT NULL DEFAULT '{}',
+        mutable TEXT NOT NULL DEFAULT '{}',
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS canonical_events (
+        id TEXT PRIMARY KEY,
+        conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        character_id TEXT,
+        type TEXT NOT NULL,
+        before TEXT NOT NULL DEFAULT '{}',
+        after TEXT NOT NULL DEFAULT '{}',
+        cause TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_events_conversation ON canonical_events(conversation_id);
+    `,
+  },
+  {
+    name: "006b_kv_store",
+    sql: `
+      CREATE TABLE IF NOT EXISTS kv_store (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+    `,
+  },
+  {
+    name: "007_social_usage_notifications",
+    sql: `
+      CREATE TABLE IF NOT EXISTS follows (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        target_id TEXT NOT NULL,
+        target_type TEXT NOT NULL DEFAULT 'user',
+        created_at TEXT NOT NULL,
+        UNIQUE(user_id, target_id, target_type)
+      );
+
+      CREATE TABLE IF NOT EXISTS likes (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        target_id TEXT NOT NULL,
+        target_type TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE(user_id, target_id, target_type)
+      );
+
+      CREATE TABLE IF NOT EXISTS bookmarks (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        target_id TEXT NOT NULL,
+        target_type TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE(user_id, target_id, target_type)
+      );
+
+      CREATE TABLE IF NOT EXISTS notifications (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type TEXT NOT NULL,
+        content TEXT NOT NULL,
+        read INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, read);
+
+      CREATE TABLE IF NOT EXISTS usage (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        conversation_id TEXT,
+        model TEXT NOT NULL,
+        input_tokens INTEGER NOT NULL DEFAULT 0,
+        output_tokens INTEGER NOT NULL DEFAULT 0,
+        cost REAL NOT NULL DEFAULT 0,
+        latency_ms INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS chapter_summaries (
+        id TEXT PRIMARY KEY,
+        conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        chapter INTEGER NOT NULL,
+        title TEXT NOT NULL DEFAULT '',
+        summary TEXT NOT NULL DEFAULT '',
+        events TEXT NOT NULL DEFAULT '[]',
+        created_at TEXT NOT NULL
+      );
+    `,
+  },
+];

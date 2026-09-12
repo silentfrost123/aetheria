@@ -1,0 +1,268 @@
+import type {
+  GenerateInput,
+  GenerateResult,
+  ModelProvider,
+  ProviderConfig,
+} from "./types";
+import { countTokens } from "./types";
+
+/**
+ * OpenAI-compatible remote provider (OpenRouter, OpenAI, Together, Groq, ...).
+ * Streams via SSE and also exposes non-streaming generate().
+ */
+export class RemoteProvider implements ModelProvider {
+  readonly id: string;
+
+  constructor(private config: ProviderConfig, id = "remote") {
+    this.id = id;
+  }
+
+  private endpoint(): string {
+    const base = this.config.baseUrl.replace(/\/$/, "");
+    if (this.config.kind === "anthropic") {
+      return `${base}/messages`;
+    }
+    if (base.endsWith("/chat/completions")) return base;
+    return `${base}/chat/completions`;
+  }
+
+  private headers(): Record<string, string> {
+    const h: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${this.config.apiKey}`,
+    };
+    if (this.config.kind === "anthropic") {
+      h["anthropic-version"] = "2023-06-01";
+    }
+    return h;
+  }
+
+  async generate(input: GenerateInput): Promise<GenerateResult> {
+    const started = Date.now();
+    const model = input.model || this.config.defaultModel;
+    const body = this.buildBody(input, model, false);
+
+    const res = await fetch(this.endpoint(), {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(
+        `Provider error ${res.status}: ${errText.slice(0, 500)}`
+      );
+    }
+
+    const json = await res.json();
+    const text = this.extractText(json);
+    const inputTokens = this.extractUsage(json).input;
+    const outputTokens = this.extractUsage(json).output;
+
+    return {
+      text,
+      model,
+      inputTokens: inputTokens || countTokens(JSON.stringify(input.messages)),
+      outputTokens: outputTokens || countTokens(text),
+      latencyMs: Date.now() - started,
+    };
+  }
+
+  async stream(
+    input: GenerateInput,
+    onChunk: (c: { delta: string }) => void
+  ): Promise<GenerateResult> {
+    const started = Date.now();
+    const model = input.model || this.config.defaultModel;
+    const body = this.buildBody(input, model, true);
+
+    const res = await fetch(this.endpoint(), {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(
+        `Provider error ${res.status}: ${errText.slice(0, 500)}`
+      );
+    }
+
+    // Anthropic streams with a different format
+    if (this.config.kind === "anthropic") {
+      return this.streamAnthropic(res, model, started, onChunk);
+    }
+
+    let full = "";
+    const reader = res.body?.getReader();
+    if (!reader) {
+      const text = await res.text();
+      full = text;
+      onChunk({ delta: text });
+      return {
+        text: full,
+        model,
+        inputTokens: countTokens(JSON.stringify(input.messages)),
+        outputTokens: countTokens(full),
+        latencyMs: Date.now() - started,
+      };
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let usage = { input: 0, output: 0 };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      let idx;
+      while ((idx = buffer.indexOf("\n")) >= 0) {
+        const line = buffer.slice(0, idx).trim();
+        buffer = buffer.slice(idx + 1);
+        if (!line.startsWith("data:")) continue;
+        const data = line.slice(5).trim();
+        if (data === "[DONE]") continue;
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed.choices?.[0]?.delta?.content;
+          if (typeof delta === "string") {
+            full += delta;
+            onChunk({ delta });
+          }
+          if (parsed.usage) {
+            usage.input = parsed.usage.prompt_tokens || 0;
+            usage.output = parsed.usage.completion_tokens || 0;
+          }
+        } catch {
+          /* ignore malformed */
+        }
+      }
+    }
+
+    return {
+      text: full,
+      model,
+      inputTokens: usage.input || countTokens(JSON.stringify(input.messages)),
+      outputTokens: usage.output || countTokens(full),
+      latencyMs: Date.now() - started,
+    };
+  }
+
+  private async streamAnthropic(
+    res: Response,
+    model: string,
+    started: number,
+    onChunk: (c: { delta: string }) => void
+  ): Promise<GenerateResult> {
+    let full = "";
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buffer.indexOf("\n")) >= 0) {
+        const line = buffer.slice(0, idx).trim();
+        buffer = buffer.slice(idx + 1);
+        if (!line.startsWith("data:")) continue;
+        const data = line.slice(5).trim();
+        if (data === "[DONE]") continue;
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+            full += parsed.delta.text;
+            onChunk({ delta: parsed.delta.text });
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+
+    return {
+      text: full,
+      model,
+      inputTokens: countTokens(""),
+      outputTokens: countTokens(full),
+      latencyMs: Date.now() - started,
+    };
+  }
+
+  async embed(texts: string[]): Promise<number[][] | null> {
+    if (!this.config.embedModel) return null;
+    const base = this.config.baseUrl.replace(/\/$/, "");
+    const url = `${base}/embeddings`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({
+        model: this.config.embedModel,
+        input: texts,
+      }),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const data = json?.data;
+    if (!Array.isArray(data)) return null;
+    return data
+      .sort((a: any, b: any) => a.index - b.index)
+      .map((d: any) => d.embedding as number[]);
+  }
+
+  private buildBody(input: GenerateInput, model: string, stream: boolean) {
+    if (this.config.kind === "anthropic") {
+      const system = input.messages
+        .filter((m) => m.role === "system")
+        .map((m) => m.content)
+        .join("\n\n");
+      const messages = input.messages
+        .filter((m) => m.role !== "system")
+        .map((m) => ({ role: m.role, content: m.content }));
+      return {
+        model,
+        system,
+        messages,
+        max_tokens: input.maxTokens || 1024,
+        temperature: input.temperature ?? 0.8,
+        stream,
+      };
+    }
+    return {
+      model,
+      messages: input.messages,
+      stream,
+      temperature: input.temperature ?? 0.8,
+      max_tokens: input.maxTokens || 1024,
+      ...(input.stop ? { stop: input.stop } : {}),
+      ...(input.responseFormat === "json"
+        ? { response_format: { type: "json_object" } }
+        : {}),
+    };
+  }
+
+  private extractText(json: any): string {
+    if (json?.choices?.[0]?.message?.content != null) {
+      const c = json.choices[0].message.content;
+      return typeof c === "string" ? c : JSON.stringify(c);
+    }
+    if (json?.content?.[0]?.text != null) {
+      return json.content.map((b: any) => b.text || "").join("");
+    }
+    return typeof json === "string" ? json : JSON.stringify(json);
+  }
+
+  private extractUsage(json: any): { input: number; output: number } {
+    const u = json?.usage || {};
+    return {
+      input: u.prompt_tokens || u.input_tokens || 0,
+      output: u.completion_tokens || u.output_tokens || 0,
+    };
+  }
+}
