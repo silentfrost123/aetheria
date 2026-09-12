@@ -8,9 +8,18 @@ export async function GET(
   req: Request,
   { params }: { params: { id: string } }
 ) {
+  const user = requireUser(req);
   const world = getWorld(params.id);
   if (!world) return error("World not found.", 404);
-  return json({ world, lore: getEntriesForWorld(world.id) });
+
+  // Private worlds are only visible to their creator.
+  const isOwner = user?.id === world.creatorId;
+  if (!world.isPublic && !isOwner) return error("World not found.", 404);
+
+  return json({
+    world,
+    lore: isOwner ? getEntriesForWorld(world.id) : undefined,
+  });
 }
 
 export async function PUT(

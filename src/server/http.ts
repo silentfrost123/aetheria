@@ -18,9 +18,20 @@ export function requireUser(req: Request): User | null {
   return getUserFromRequest(req);
 }
 
+// Cap request bodies to prevent oversized payloads from consuming memory/CPU.
+const MAX_BODY_BYTES = 1_000_000; // 1 MB
+
 export async function readBody<T = Record<string, unknown>>(req: Request): Promise<T> {
+  // Reject obviously oversized bodies up front (header present on most clients).
+  const declared = Number(req.headers.get("content-length") || "0");
+  if (declared > MAX_BODY_BYTES) return {} as T;
+
+  const text = await req.text().catch(() => "");
+  if (text.length > MAX_BODY_BYTES) return {} as T;
+
+  if (!text) return {} as T;
   try {
-    return (await req.json()) as T;
+    return JSON.parse(text) as T;
   } catch {
     return {} as T;
   }

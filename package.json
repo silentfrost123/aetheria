@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "tsx scripts/seed.ts",
-    "db:migrate": "tsx scripts/migrate.ts"
+    "db:migrate": "tsx scripts/migrate.ts",
+    "security-test": "node scripts/security-test.mjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

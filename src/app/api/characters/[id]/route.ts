@@ -17,11 +17,18 @@ export async function GET(
   const char = getCharacter(params.id);
   if (!char) return error("Character not found.", 404);
 
-  // Hide hidden definition unless creator views own character or it's public-exposed
   const isOwner = user?.id === char.creatorId;
+
+  // Private characters are only visible to their creator.
+  if (!char.isPublic && !isOwner) {
+    return error("Character not found.", 404);
+  }
+
+  // Hidden fields (definition, personality) are only exposed to the owner.
   const safeChar = {
     ...char,
     definition: isOwner ? char.definition : undefined,
+    personality: isOwner ? char.personality : undefined,
   };
 
   return json({

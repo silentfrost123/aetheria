@@ -190,3 +190,17 @@ GET  /api/home                    GET  /api/discover
 
 Phase 2 — Story Mode chaptering, world simulation & the AI Director, quests, inventory, multi-character chats, semantic (vector) memory, image generation.
 Phase 3 — Voice, creator monetization, advanced analytics, mobile PWA, recommendations.
+
+## Security
+
+Security posture and controls (see `scripts/security-test.mjs` for regression tests — run with `npm run security-test` against a running instance):
+
+- **Authentication** — bcrypt (cost 12) password hashing; 256-bit CSPRNG session tokens stored server-side; HttpOnly + SameSite=Lax + Secure session cookie; per-account and per-IP login rate limiting; timing-equalized login to prevent account enumeration.
+- **Authorization** — every protected endpoint enforces ownership server-side (conversations, memories, lore, characters, worlds, personas). Private characters/worlds are only readable/chatable by their creator. Never trust client-side checks.
+- **Guest isolation** — each guest session gets a unique throwaway account, so guests cannot see each other's data.
+- **Input validation** — request bodies are size-capped; user settings are validated against an allowlist (prevents mass assignment); message/prompt lengths are capped.
+- **Points** — spend/add/claim/redeem are atomic (SQLite transactions); redeem codes use a CSPRNG.
+- **Headers** — `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`; no wildcard CORS.
+- **Container** — production image runs as a non-root user.
+
+Known limitations (acceptable for this project's stage, documented honestly): no email verification or password-reset flow yet; in-memory rate limiting is per-instance (replace with a shared store if scaled out); no CSP yet (add one tuned for the bundled Next.js app before public launch); demo seed account (`demo@aetheria.dev` / `password123`) should be disabled in real deployments.

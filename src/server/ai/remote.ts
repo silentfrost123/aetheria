@@ -10,6 +10,15 @@ import { countTokens } from "./types";
  * OpenAI-compatible remote provider (OpenRouter, OpenAI, Together, Groq, ...).
  * Streams via SSE and also exposes non-streaming generate().
  */
+const REQUEST_TIMEOUT_MS = 90_000;
+
+/** fetch() with a hard timeout so a hung provider can't tie up a worker. */
+function fetchWithTimeout(url: string, init: RequestInit, ms: number): Promise<Response> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { ...init, signal: ctrl.signal }).finally(() => clearTimeout(t));
+}
+
 export class RemoteProvider implements ModelProvider {
   readonly id: string;
 
@@ -42,11 +51,15 @@ export class RemoteProvider implements ModelProvider {
     const model = input.model || this.config.defaultModel;
     const body = this.buildBody(input, model, false);
 
-    const res = await fetch(this.endpoint(), {
-      method: "POST",
-      headers: this.headers(),
-      body: JSON.stringify(body),
-    });
+    const res = await fetchWithTimeout(
+      this.endpoint(),
+      {
+        method: "POST",
+        headers: this.headers(),
+        body: JSON.stringify(body),
+      },
+      REQUEST_TIMEOUT_MS
+    );
 
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
@@ -77,11 +90,15 @@ export class RemoteProvider implements ModelProvider {
     const model = input.model || this.config.defaultModel;
     const body = this.buildBody(input, model, true);
 
-    const res = await fetch(this.endpoint(), {
-      method: "POST",
-      headers: this.headers(),
-      body: JSON.stringify(body),
-    });
+    const res = await fetchWithTimeout(
+      this.endpoint(),
+      {
+        method: "POST",
+        headers: this.headers(),
+        body: JSON.stringify(body),
+      },
+      REQUEST_TIMEOUT_MS
+    );
 
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
@@ -199,14 +216,18 @@ export class RemoteProvider implements ModelProvider {
     if (!this.config.embedModel) return null;
     const base = this.config.baseUrl.replace(/\/$/, "");
     const url = `${base}/embeddings`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: this.headers(),
-      body: JSON.stringify({
-        model: this.config.embedModel,
-        input: texts,
-      }),
-    });
+    const res = await fetchWithTimeout(
+      url,
+      {
+        method: "POST",
+        headers: this.headers(),
+        body: JSON.stringify({
+          model: this.config.embedModel,
+          input: texts,
+        }),
+      },
+      REQUEST_TIMEOUT_MS
+    );
     if (!res.ok) return null;
     const json = await res.json();
     const data = json?.data;

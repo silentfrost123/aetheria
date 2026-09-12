@@ -44,6 +44,22 @@ export async function POST(req: Request) {
     return error("A character or world is required.");
   }
 
+  // You may only chat with public characters/worlds or your own.
+  if (body.characterId) {
+    const char = getCharacter(body.characterId);
+    if (!char) return error("Character not found.", 404);
+    if (!char.isPublic && char.creatorId !== user.id) {
+      return error("This character is private.", 403);
+    }
+  }
+  if (body.worldId) {
+    const world = getWorld(body.worldId);
+    if (!world) return error("World not found.", 404);
+    if (!world.isPublic && world.creatorId !== user.id) {
+      return error("This world is private.", 403);
+    }
+  }
+
   const conv = createConversation({
     userId: user.id,
     characterId: body.characterId,

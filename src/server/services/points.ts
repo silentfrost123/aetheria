@@ -1,5 +1,6 @@
 import { db, nowIso } from "../db";
 import { newId } from "../util";
+import crypto from "node:crypto";
 
 /* ------------------------------------------------------------------ */
 /* Config (env-tunable, sane defaults)                                 */
@@ -242,10 +243,12 @@ export function createCode(amount: number, code?: string): string {
 }
 
 function randomCode(): string {
+  // Cryptographically secure — redeem codes grant points and must not be
+  // predictable (Math.random() is not suitable for security-sensitive tokens).
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "";
   for (let i = 0; i < 10; i++) {
-    out += chars[Math.floor(Math.random() * chars.length)];
+    out += chars[crypto.randomInt(chars.length)];
   }
   return out;
 }

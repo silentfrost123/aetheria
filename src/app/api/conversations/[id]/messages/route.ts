@@ -34,6 +34,7 @@ export async function POST(
   const body = await readBody<{ content: string; isOoc?: boolean }>(req);
   const content = (body.content || "").trim();
   if (!content) return error("Message is empty.");
+  if (content.length > 4000) return error("Message is too long (max 4000 characters).");
 
   const branch = getActiveBranch(conv.id);
 
@@ -228,10 +229,12 @@ function rollDice(expr: string): { summary: string; total: number; rolls: number
   let total = 0;
   let rolls: number[] = [];
   if (m) {
-    const count = m[1] ? parseInt(m[1], 10) : 1;
-    const sides = parseInt(m[2], 10);
+    const count = Math.min(m[1] ? parseInt(m[1], 10) : 1, 100);
+    // Cap die size so crypto.randomInt can never receive an out-of-range bound
+    // (max supported is 2^48) and to prevent absurd values.
+    const sides = Math.min(parseInt(m[2], 10) || 6, 1_000_000);
     const mod = m[3] ? parseInt(m[3], 10) : 0;
-    for (let i = 0; i < Math.min(count, 100); i++) {
+    for (let i = 0; i < count; i++) {
       const r = crypto.randomInt(1, sides + 1);
       rolls.push(r);
       total += r;

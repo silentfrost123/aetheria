@@ -9,6 +9,10 @@ const SESSION_COOKIE = "aetheria_session";
 export const SESSION_COOKIE_NAME = SESSION_COOKIE;
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 
+// A dummy bcrypt hash used to equalize login timing for unknown emails,
+// preventing a timing side-channel that would allow account enumeration.
+export const DUMMY_HASH = bcrypt.hashSync("aetheria-timing-equalizer", 12);
+
 interface SessionRow {
   token: string;
   user_id: string;
@@ -16,7 +20,7 @@ interface SessionRow {
 }
 
 export function hashPassword(password: string): string {
-  return bcrypt.hashSync(password, 10);
+  return bcrypt.hashSync(password, 12);
 }
 
 export function verifyPassword(password: string, hash: string): boolean {
@@ -50,7 +54,7 @@ function readSessionToken(cookieHeader: string | undefined | null): string | nul
 
 export function getSessionUser(req: NextRequest): User | null {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
-  return getUserFromToken(token);
+  return withoutPasswordHash(getUserFromToken(token));
 }
 
 /** Works with a plain fetch Request (route handlers). */
@@ -58,15 +62,22 @@ export function getUserFromRequest(req: Request): User | null {
   // 1. Cookie (works in normal browser contexts)
   const token = readSessionToken(req.headers.get("cookie"));
   const cookieUser = getUserFromToken(token);
-  if (cookieUser) return cookieUser;
+  if (cookieUser) return withoutPasswordHash(cookieUser);
 
   // 2. Authorization header (works in embedded/iframe contexts where
   //    third-party cookies are blocked)
   const auth = req.headers.get("authorization");
   if (auth && auth.startsWith("Bearer ")) {
-    return getUserFromToken(auth.slice(7).trim());
+    return withoutPasswordHash(getUserFromToken(auth.slice(7).trim()));
   }
   return null;
+}
+
+/** Strip the password hash from a user object so it can never leak from a route. */
+function withoutPasswordHash(user: User | null): User | null {
+  if (!user) return null;
+  const { passwordHash: _omit, ...rest } = user;
+  return rest as User;
 }
 
 export function getUserFromToken(token: string | null | undefined): User | null {
@@ -186,9 +197,42 @@ export function createUser(input: {
   return { user };
 }
 
+// Allowlist of user settings and their validators. Anything not listed is
+// dropped, preventing mass assignment and arbitrary data from being persisted
+// (and, for defaultModel, preventing cost-abuse via exotic model IDs).
+const SETTING_VALIDATORS: Record<string, (v: unknown) => boolean> = {
+  responseLength: (v) =>
+    ["short", "medium", "long", "very_long", "adaptive"].includes(String(v)),
+  narrationLevel: (v) => typeof v === "number" && v >= 0 && v <= 1,
+  creativity: (v) => typeof v === "number" && v >= 0 && v <= 1,
+  temperature: (v) => typeof v === "number" && v >= 0 && v <= 2,
+  defaultModel: (v) =>
+    typeof v === "string" && /^[A-Za-z0-9._:/-]{1,64}$/.test(v),
+  useMemory: (v) => typeof v === "boolean",
+  useLorebook: (v) => typeof v === "boolean",
+  autoSummary: (v) => typeof v === "boolean",
+  aiSuggestions: (v) => typeof v === "boolean",
+  autoImageGen: (v) => typeof v === "boolean",
+  fontScale: (v) => ["sm", "md", "lg"].includes(String(v)),
+  reduceMotion: (v) => typeof v === "boolean",
+  emailNotifications: (v) => typeof v === "boolean",
+  newFollowerNotifications: (v) => typeof v === "boolean",
+  replyNotifications: (v) => typeof v === "boolean",
+};
+
+function sanitizeSettings(input: unknown): Record<string, unknown> {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return {};
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
+    const validate = SETTING_VALIDATORS[k];
+    if (validate && validate(v)) out[k] = v;
+  }
+  return out;
+}
+
 export function updateUserSettings(userId: string, settings: Record<string, unknown>): void {
   db.prepare("UPDATE users SET settings = ? WHERE id = ?").run(
-    JSON.stringify(settings),
+    JSON.stringify(sanitizeSettings(settings)),
     userId
   );
 }

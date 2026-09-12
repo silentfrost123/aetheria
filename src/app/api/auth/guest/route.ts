@@ -1,32 +1,42 @@
 import { json } from "@/server/http";
 import { newId } from "@/server/util";
+import crypto from "node:crypto";
 import {
-  getUserByEmail,
   createUser,
   createSession,
   publicUser,
 } from "@/server/auth";
+import { rateLimit, clientIp } from "@/server/rateLimit";
 
 export const runtime = "nodejs";
 
-const GUEST_EMAIL = "guest@aetheria.dev";
-
 /**
- * Auto-provisions a guest session so the app is usable with zero friction,
- * even in embedded/preview environments where cookies and localStorage are
- * blocked. Returns a token the client can hold in memory.
+ * Auto-provisions a *fresh, isolated* guest session so the app is usable with
+ * zero friction, even in embedded/preview environments where cookies and
+ * localStorage are blocked.
+ *
+ * Each guest gets a unique throwaway user account (never a shared one), so a
+ * guest's conversations, memories, points and content are never visible to any
+ * other guest. Returns a token the client can hold in memory.
  */
-export async function POST(_req: Request) {
-  let user = getUserByEmail(GUEST_EMAIL);
-  if (!user) {
-    const res = createUser({
-      email: GUEST_EMAIL,
-      username: "Guest",
-      password: newId("pw") + newId("pw"),
-      ageVerified: true,
-    });
-    user = res.user;
+export async function POST(req: Request) {
+  const ip = clientIp(req);
+  const rl = rateLimit(`guest:ip:${ip}`, 30, 60 * 60_000);
+  if (!rl.ok) {
+    return json({ error: "Too many guest sessions. Try again later." }, 429);
   }
+
+  const stamp = crypto.randomBytes(12).toString("hex");
+  const email = `guest_${stamp}@guest.aetheria.dev`;
+  const username = `Guest${stamp.slice(0, 8)}`;
+
+  const res = createUser({
+    email,
+    username,
+    password: newId("pw") + newId("pw"),
+    ageVerified: true,
+  });
+  const user = res.user;
   if (!user) return json({ error: "Could not create guest session." }, 500);
 
   const token = createSession(user.id);

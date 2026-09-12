@@ -37,7 +37,10 @@ COPY --from=builder /app/next.config.mjs ./next.config.mjs
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
 
-RUN mkdir -p /app/data
+RUN mkdir -p /app/data \
+  && useradd --system --uid 1001 --create-home --home-dir /app app \
+  && chown -R app:app /app
+USER app
 
 EXPOSE 3000
 CMD ["npm", "start"]
