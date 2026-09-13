@@ -10,6 +10,7 @@ import { apiFetch, streamChat } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { usePoints } from "@/lib/points-context";
 import { Icon } from "@/components/icons";
+import { useToast, ConfirmDialog } from "@/components/ui";
 
 interface MemoryVM {
   id: string;
@@ -71,6 +72,28 @@ export default function ChatPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [swipePager, setSwipePager] = useState<Record<string, number>>({});
   const [authRequired, setAuthRequired] = useState(false);
+  const { toast } = useToast();
+  const [confirm, setConfirm] = useState<{
+    title: string;
+    description?: string;
+    confirmLabel?: string;
+    danger?: boolean;
+    action: () => Promise<void>;
+  } | null>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+
+  async function runConfirmed() {
+    if (!confirm) return;
+    setConfirmBusy(true);
+    try {
+      await confirm.action();
+    } catch (e: any) {
+      toast(e?.message || "Something went wrong.", "error");
+    } finally {
+      setConfirmBusy(false);
+      setConfirm(null);
+    }
+  }
 
   const charName = data?.conversation.character?.name || "The world";
   const charAvatar = data?.conversation.character?.avatar;
@@ -149,7 +172,7 @@ export default function ChatPage() {
         refreshPoints();
         return;
       }
-      alert(e.message || "Something went wrong.");
+      toast(e.message || "Something went wrong.", "error");
     }
   }
 
@@ -168,7 +191,7 @@ export default function ChatPage() {
       load();
     } catch (e: any) {
       if (e?.status === 402) setOutOfPoints(true);
-      else alert(e.message);
+      else toast(e.message, "error");
     } finally {
       setStreaming(false);
     }
@@ -181,7 +204,7 @@ export default function ChatPage() {
       refreshPoints();
     } catch (e: any) {
       if (e?.status === 402) setOutOfPoints(true);
-      else alert(e.message);
+      else toast(e.message, "error");
     }
   }
 
@@ -191,18 +214,22 @@ export default function ChatPage() {
       load();
       setSwipePager((p) => ({ ...p, [msgId]: 0 }));
     } catch (e: any) {
-      alert(e.message);
+      toast(e.message, "error");
     }
   }
 
-  async function branchFrom(msgId: string) {
-    if (!confirm("Create an alternate timeline from this message? The original is preserved.")) return;
-    try {
-      await apiFetch(`/api/messages/${msgId}/branch`, { method: "POST" });
-      load();
-    } catch (e: any) {
-      alert(e.message);
-    }
+  function branchFrom(msgId: string) {
+    setConfirm({
+      title: "Branch timeline",
+      description:
+        "Create an alternate timeline from this message? The original stays intact.",
+      confirmLabel: "Create branch",
+      action: async () => {
+        await apiFetch(`/api/messages/${msgId}/branch`, { method: "POST" });
+        await load();
+        toast("Alternate timeline created.", "success");
+      },
+    });
   }
 
   async function saveEdit(msgId: string) {
@@ -213,42 +240,69 @@ export default function ChatPage() {
       });
       setEditingId(null);
       load();
+      toast("Message updated.", "success");
     } catch (e: any) {
-      alert(e.message);
+      toast(e.message, "error");
     }
   }
 
-  async function delMessage(msgId: string) {
-    if (!confirm("Delete this message and everything after it?")) return;
-    try {
-      await apiFetch(`/api/messages/${msgId}?truncate=1`, { method: "DELETE" });
-      load();
-    } catch (e: any) {
-      alert(e.message);
-    }
+  function delMessage(msgId: string) {
+    setConfirm({
+      title: "Delete from here?",
+      description: "This message and everything after it will be removed from this timeline.",
+      confirmLabel: "Delete",
+      danger: true,
+      action: async () => {
+        await apiFetch(`/api/messages/${msgId}?truncate=1`, { method: "DELETE" });
+        await load();
+        toast("Messages deleted.", "success");
+      },
+    });
   }
 
   async function copyText(content: string) {
-    await navigator.clipboard?.writeText(content);
+    try {
+      await navigator.clipboard?.writeText(content);
+      toast("Copied to clipboard.", "success");
+    } catch {
+      toast("Couldn't access the clipboard.", "error");
+    }
   }
 
   async function togglePin(mem: MemoryVM) {
-    await apiFetch(`/api/memories/${mem.id}`, {
-      method: "PUT",
-      body: JSON.stringify({ isPinned: !mem.isPinned }),
-    });
-    load();
+    try {
+      await apiFetch(`/api/memories/${mem.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ isPinned: !mem.isPinned }),
+      });
+      load();
+    } catch (e: any) {
+      toast(e.message, "error");
+    }
   }
   async function toggleImportant(mem: MemoryVM) {
-    await apiFetch(`/api/memories/${mem.id}`, {
-      method: "PUT",
-      body: JSON.stringify({ isImportant: !mem.isImportant }),
-    });
-    load();
+    try {
+      await apiFetch(`/api/memories/${mem.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ isImportant: !mem.isImportant }),
+      });
+      load();
+    } catch (e: any) {
+      toast(e.message, "error");
+    }
   }
-  async function delMemory(mem: MemoryVM) {
-    await apiFetch(`/api/memories/${mem.id}`, { method: "DELETE" });
-    load();
+  function delMemory(mem: MemoryVM) {
+    setConfirm({
+      title: "Delete memory?",
+      description: "The character will forget this. This can't be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+      action: async () => {
+        await apiFetch(`/api/memories/${mem.id}`, { method: "DELETE" });
+        await load();
+        toast("Memory deleted.", "success");
+      },
+    });
   }
 
   const messages = data?.messages || [];
@@ -297,6 +351,16 @@ export default function ChatPage() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={!!confirm}
+        title={confirm?.title || ""}
+        description={confirm?.description}
+        confirmLabel={confirm?.confirmLabel}
+        danger={confirm?.danger}
+        busy={confirmBusy}
+        onConfirm={runConfirmed}
+        onClose={() => setConfirm(null)}
+      />
       <div className="flex h-screen max-h-screen overflow-hidden">
         {/* LEFT — character info (desktop) */}
         <aside className="hidden lg:flex flex-col w-60 border-r border-border-soft bg-bg-soft/60 p-4 gap-4 overflow-y-auto">

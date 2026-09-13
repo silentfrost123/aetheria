@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { PointsProvider } from "@/lib/points-context";
+import { ToastProvider } from "@/components/ui";
 
 /** Applies appearance preferences (font scale, reduce motion) to <html>. */
 function AppearanceApplier({ children }: { children: React.ReactNode }) {
@@ -22,7 +23,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
       <PointsProvider>
-        <AppearanceApplier>{children}</AppearanceApplier>
+        <ToastProvider>
+          <AppearanceApplier>{children}</AppearanceApplier>
+        </ToastProvider>
       </PointsProvider>
     </AuthProvider>
   );

@@ -7,6 +7,9 @@ import crypto from "node:crypto";
 /* ------------------------------------------------------------------ */
 export const DAILY_POINTS = intEnv("DAILY_POINTS", 500);
 export const MESSAGE_COST = intEnv("MESSAGE_COST", 50);
+// Welcome grant so a brand-new account can send its first messages immediately,
+// before discovering the daily claim. Server-side only; never trust the client.
+export const STARTING_POINTS = intEnv("STARTING_POINTS", 150);
 
 function intEnv(name: string, fallback: number): number {
   const v = process.env[name];
@@ -120,6 +123,27 @@ export function addPoints(
     ).run(next, nowIso(), userId);
     insertTx(userId, amount, kind, note);
     return next;
+  });
+  return tx();
+}
+
+/* ------------------------------------------------------------------ */
+/* Starter grant (idempotent — exactly once per account)               */
+/* ------------------------------------------------------------------ */
+export function grantStarterPoints(userId: string): number {
+  const tx = db.transaction((): number => {
+    const already = db
+      .prepare(
+        "SELECT 1 FROM point_transactions WHERE user_id = ? AND kind = 'starter' LIMIT 1"
+      )
+      .get(userId);
+    if (already) return getBalance(userId);
+    return addPoints(
+      userId,
+      STARTING_POINTS,
+      "starter",
+      "Welcome to Aetheria — your story begins."
+    );
   });
   return tx();
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ReactNode } from "react";
+import { createContext, useCallback, useContext, useState, ReactNode } from "react";
 import { Icon } from "./icons";
 
 /* ------------------------------------------------------------------ */
@@ -240,6 +240,131 @@ export function AuthGate({
           <Link href="/auth?mode=register" className="btn-ghost">
             Create account
           </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Toasts — non-blocking feedback for every action                     */
+/* ------------------------------------------------------------------ */
+type ToastKind = "success" | "error" | "info";
+interface ToastItem {
+  id: number;
+  message: string;
+  kind: ToastKind;
+}
+const ToastCtx = createContext<{ toast: (message: string, kind?: ToastKind) => void } | null>(
+  null
+);
+
+let toastSeq = 1;
+
+export function ToastProvider({ children }: { children: ReactNode }) {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const toast = useCallback((message: string, kind: ToastKind = "info") => {
+    const id = toastSeq++;
+    setToasts((t) => [...t.slice(-3), { id, message, kind }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4200);
+  }, []);
+
+  const kindStyles: Record<ToastKind, string> = {
+    success: "border-success/40 text-success",
+    error: "border-danger/40 text-danger",
+    info: "border-accent/40 text-accent-soft",
+  };
+  const kindIcon: Record<ToastKind, string> = {
+    success: "check",
+    error: "alert",
+    info: "spark",
+  };
+
+  return (
+    <ToastCtx.Provider value={{ toast }}>
+      {children}
+      <div
+        aria-live="polite"
+        className="fixed bottom-20 md:bottom-6 right-4 z-[80] flex flex-col gap-2 w-80 max-w-[calc(100vw-2rem)] pointer-events-none"
+      >
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className={`toast-enter pointer-events-auto flex items-start gap-2.5 rounded-xl border bg-bg-panel/95 backdrop-blur-xl shadow-glow px-3.5 py-3 ${kindStyles[t.kind]}`}
+          >
+            <Icon name={kindIcon[t.kind]} className="w-4 h-4 mt-0.5 shrink-0" />
+            <span className="text-sm text-text leading-snug">{t.message}</span>
+            <button
+              onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))}
+              className="ml-auto text-text-faint hover:text-text shrink-0"
+              aria-label="Dismiss notification"
+            >
+              <Icon name="close" className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ))}
+      </div>
+    </ToastCtx.Provider>
+  );
+}
+
+export function useToast() {
+  const ctx = useContext(ToastCtx);
+  if (!ctx) throw new Error("useToast must be used within ToastProvider");
+  return ctx;
+}
+
+/* ------------------------------------------------------------------ */
+/* Confirm dialog — replaces window.confirm()                          */
+/* ------------------------------------------------------------------ */
+export function ConfirmDialog({
+  open,
+  title,
+  description,
+  confirmLabel = "Confirm",
+  danger = false,
+  busy = false,
+  onConfirm,
+  onClose,
+}: {
+  open: boolean;
+  title: string;
+  description?: string;
+  confirmLabel?: string;
+  danger?: boolean;
+  busy?: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      onClick={onClose}
+    >
+      <div
+        className="card w-full max-w-sm p-6 toast-enter"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="font-display text-lg font-bold">{title}</h3>
+        {description && (
+          <p className="text-sm text-text-dim mt-2 leading-relaxed">{description}</p>
+        )}
+        <div className="flex gap-3 mt-6">
+          <button className="btn-ghost flex-1" onClick={onClose} disabled={busy}>
+            Cancel
+          </button>
+          <button
+            className={`flex-1 ${danger ? "btn-danger" : "btn-primary"}`}
+            onClick={onConfirm}
+            disabled={busy}
+          >
+            {busy ? "Working…" : confirmLabel}
+          </button>
         </div>
       </div>
     </div>

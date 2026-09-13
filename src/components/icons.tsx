@@ -141,6 +141,16 @@ export function Icon({ name, className = "w-5 h-5" }: { name: string; className?
     close: (
       <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     ),
+    check: (
+      <path d="M4.5 12.5l5 5L19.5 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    ),
+    alert: (
+      <>
+        <path d="M12 3.5 22 20H2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+        <path d="M12 10v4.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="12" cy="17.2" r="1.1" fill="currentColor" />
+      </>
+    ),
     menu: (
       <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     ),

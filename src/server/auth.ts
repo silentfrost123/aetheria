@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import { db, nowIso } from "./db";
 import { newId, safeParse } from "./util";
+import { grantStarterPoints } from "./services/points";
 import type { User } from "@/lib/types";
 
 const SESSION_COOKIE = "aetheria_session";
@@ -314,6 +315,9 @@ export function createUser(input: {
     nowIso()
   );
 
+  // Welcome grant so the first story message works immediately (idempotent).
+  grantStarterPoints(id);
+
   const user = getUserById(id);
   return { user };
 }
@@ -339,6 +343,10 @@ const SETTING_VALIDATORS: Record<string, (v: unknown) => boolean> = {
   emailNotifications: (v) => typeof v === "boolean",
   newFollowerNotifications: (v) => typeof v === "boolean",
   replyNotifications: (v) => typeof v === "boolean",
+  // Onboarding / personalization (Increment 1)
+  onboarded: (v) => typeof v === "boolean",
+  genres: (v) =>
+    Array.isArray(v) && v.length <= 12 && v.every((g) => typeof g === "string" && g.length <= 24),
 };
 
 function sanitizeSettings(input: unknown): Record<string, unknown> {
@@ -352,8 +360,14 @@ function sanitizeSettings(input: unknown): Record<string, unknown> {
 }
 
 export function updateUserSettings(userId: string, settings: Record<string, unknown>): void {
+  // Merge (not replace): partial updates — e.g. onboarding saving only
+  // `onboarded` + `genres` — must not wipe the user's other preferences.
+  const row = db.prepare("SELECT settings FROM users WHERE id = ?").get(userId) as
+    | { settings: string }
+    | undefined;
+  const current = safeParse<Record<string, unknown>>(row?.settings || "{}", {});
   db.prepare("UPDATE users SET settings = ? WHERE id = ?").run(
-    JSON.stringify(sanitizeSettings(settings)),
+    JSON.stringify({ ...current, ...sanitizeSettings(settings) }),
     userId
   );
 }

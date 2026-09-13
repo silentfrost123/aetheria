@@ -402,7 +402,7 @@ export function seedAll() {
     worldId,
   });
 
-  insertCharacter(seedUid, {
+  const ashenRoadId = insertCharacter(seedUid, {
     name: "The Ashen Road",
     species: "Story",
     gender: "Story",
@@ -471,6 +471,22 @@ export function seedAll() {
     "You and Elena are injured but alive. The main exit is sealed.",
     "Find a way out. Discover what the Veil was studying. Survive.",
     "Elena cannot use her full power underground. The 'singing' grows louder each hour.",
+    nowIso()
+  );
+
+  // Public story so the Interactive Stories surfaces have real content.
+  db.prepare(
+    `INSERT INTO stories (id, creator_id, title, cover, description, genre, world_id, characters, is_public, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`
+  ).run(
+    id("sty"),
+    seedUid,
+    "The Ashen Road",
+    "/avatars/ashen-kingdom.png",
+    "A branching dark-fantasy tale of memory, magic, and the road north to Arath. Every choice carves a new timeline.",
+    "Dark Fantasy",
+    worldId,
+    JSON.stringify([ashenRoadId, elenaId]),
     nowIso()
   );
 

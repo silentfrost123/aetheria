@@ -202,6 +202,42 @@ html.reduce-motion *::after {
   border-color: #3a3a55;
 }
 
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+.btn-danger:hover {
+  filter: brightness(1.1);
+}
+.btn-danger:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+@keyframes toast-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.toast-enter {
+  animation: toast-in 0.22s ease-out both;
+}
+
 .btn-icon {
   display: inline-flex;
   align-items: center;

@@ -81,8 +81,9 @@ EMBED_MODEL=openai/text-embedding-3-small  # embeddings (optional)
 Points / monetization (optional — defaults shown):
 
 ```bash
-DAILY_POINTS=500   # free points granted per day (claimed on /points)
-MESSAGE_COST=50    # points deducted per AI message (send, regenerate, swipe)
+DAILY_POINTS=500     # free points granted per day (claimed on /points)
+MESSAGE_COST=50      # points deducted per AI message (send, regenerate, swipe)
+STARTING_POINTS=150  # one-time welcome grant so the first message always works
 ```
 
 > Commands like `/roll` and `/status` are free. Every AI reply costs `MESSAGE_COST`.
