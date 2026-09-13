@@ -454,4 +454,10 @@ export const MIGRATIONS: Migration[] = [
       );
     `,
   },
+  {
+    name: "012_billing_provider",
+    sql: `
+      ALTER TABLE payments ADD COLUMN provider TEXT NOT NULL DEFAULT 'stripe';
+    `,
+  },
 ];

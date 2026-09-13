@@ -85,10 +85,22 @@ DAILY_POINTS=500     # free points granted per day (claimed on /points)
 MESSAGE_COST=50      # points deducted per AI message (send, regenerate, swipe)
 STARTING_POINTS=150  # one-time welcome grant so the first message always works
 
-# Stripe (optional — enables card payments & subscriptions on /points)
+# Ziina (UAE — NO trade license needed; preferred when set)
+# ZIINA_ACCESS_TOKEN=...               # ziina.com/business/connect → "Other builder or custom"
+# ZIINA_TEST=true                      # test mode; remove/set false for live charges
+
+# Stripe (alternative — enables card payments & subscriptions on /points)
 # STRIPE_SECRET_KEY=sk_live_...        # or sk_test_...
 # STRIPE_WEBHOOK_SECRET=whsec_...      # from the Stripe webhook endpoint
 ```
+
+**Ziina setup (UAE individuals — 5 minutes, Emirates ID only):**
+1. Install the Ziina app → onboarding with your Emirates ID (~4 min).
+2. Go to ziina.com/business/connect → choose **"Other builder or custom"** → get your API key.
+3. Set `ZIINA_ACCESS_TOKEN` (and `ZIINA_TEST=true` while testing) in your host's env vars.
+4. Done — customers pay by card/Apple Pay on Ziina's hosted page; Aetheria verifies
+   each payment server-side before granting points. Funds settle to your UAE bank in 1–2 days
+   (2.6% + 1 AED per transaction; first 1,000 AED free). No webhooks needed.
 
 **Stripe setup (5 minutes):**
 1. Create a Stripe account → get a secret key (Dashboard → Developers → API keys).

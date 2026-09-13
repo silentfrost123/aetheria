@@ -4,19 +4,34 @@ import { newId, safeParse } from "../util";
 import { addPoints } from "./points";
 
 /* ------------------------------------------------------------------ */
-/* Config                                                              */
+/* Config — two interchangeable providers. Ziina (UAE, no trade        */
+/* license required) is preferred when configured; Stripe otherwise.   */
 /* ------------------------------------------------------------------ */
-const SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
-const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
+const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY || "";
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
+const ZIINA_TOKEN = process.env.ZIINA_ACCESS_TOKEN || "";
+const ZIINA_TEST = process.env.ZIINA_TEST === "true";
+const ZIINA_API = "https://api-v2.ziina.com/api";
+// The AED is pegged to the USD at 3.6725 — deterministic conversion for
+// our USD catalog into Ziina's AED charges.
+const USD_AED_PEG = 3.6725;
+
+export type Provider = "ziina" | "stripe";
+
+export function activeProvider(): Provider | null {
+  if (ZIINA_TOKEN) return "ziina";
+  if (STRIPE_SECRET) return "stripe";
+  return null;
+}
 
 export function paymentsConfigured(): boolean {
-  return !!SECRET_KEY;
+  return activeProvider() !== null;
 }
 
 let stripeClient: Stripe | null = null;
 export function getStripe(): Stripe | null {
-  if (!SECRET_KEY) return null;
-  if (!stripeClient) stripeClient = new Stripe(SECRET_KEY);
+  if (!STRIPE_SECRET) return null;
+  if (!stripeClient) stripeClient = new Stripe(STRIPE_SECRET);
   return stripeClient;
 }
 
@@ -120,9 +135,173 @@ export function getSubscription(userId: string) {
   };
 }
 
+export class BillingError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 /* ------------------------------------------------------------------ */
-/* Stripe price provisioning (created once per catalog item)           */
+/* Shared fulfilment — the ONLY place purchases grant value. Called    */
+/* from Stripe's signed webhook and from Ziina status confirmation.    */
+/* Idempotent: a payment transitions pending → succeeded exactly once. */
 /* ------------------------------------------------------------------ */
+function fulfillPaymentRow(pay: any, customerRef: string | null): boolean {
+  if (!pay || pay.status === "succeeded") return false;
+  const userId = pay.user_id as string;
+  const tx = db.transaction(() => {
+    const cur = db.prepare("SELECT status FROM payments WHERE id = ?").get(pay.id) as any;
+    if (!cur || cur.status === "succeeded") return false;
+    db.prepare(
+      "UPDATE payments SET status = 'succeeded', stripe_customer_id = COALESCE(?, stripe_customer_id) WHERE id = ?"
+    ).run(customerRef, pay.id);
+
+    if (pay.kind === "credits") {
+      const pack = db
+        .prepare("SELECT * FROM credit_packages WHERE id = ?")
+        .get(pay.item_ref) as any;
+      if (pack) addPoints(userId, pack.credits, "purchase", `Purchased ${pack.name}`);
+    } else if (pay.kind === "subscription") {
+      const plan = db.prepare("SELECT * FROM plans WHERE id = ?").get(pay.item_ref) as any;
+      if (plan) {
+        db.prepare(
+          `INSERT INTO subscriptions (user_id, plan_code, stripe_subscription_id, stripe_customer_id, status, updated_at)
+           VALUES (?, ?, ?, ?, 'active', ?)
+           ON CONFLICT(user_id) DO UPDATE SET
+             plan_code = excluded.plan_code,
+             stripe_subscription_id = excluded.stripe_subscription_id,
+             stripe_customer_id = excluded.stripe_customer_id,
+             status = 'active',
+             updated_at = excluded.updated_at`
+        ).run(userId, plan.code, null, customerRef, nowIso());
+        db.prepare("UPDATE users SET plan = ? WHERE id = ?").run(plan.code, userId);
+      }
+    }
+    return true;
+  });
+  return tx();
+}
+
+/* ------------------------------------------------------------------ */
+/* Checkout                                                            */
+/* ------------------------------------------------------------------ */
+export interface CheckoutRequest {
+  kind: "credits" | "subscription";
+  refId: string; // package id or plan id
+}
+
+export async function createCheckout(
+  userId: string,
+  req: CheckoutRequest,
+  baseUrl: string
+): Promise<{ url: string; paymentId: string; provider: Provider }> {
+  const provider = activeProvider();
+  if (!provider) throw new BillingError("Payments aren't configured on this deployment.", 503);
+
+  let itemRow: any;
+  let amountCents: number;
+  let itemName: string;
+  if (req.kind === "credits") {
+    itemRow = db.prepare("SELECT * FROM credit_packages WHERE id = ? AND active = 1").get(req.refId) as any;
+    if (!itemRow) throw new BillingError("Unknown credit package.", 404);
+    amountCents = itemRow.price_cents;
+    itemName = `${itemRow.credits} Aetheria points`;
+  } else {
+    itemRow = db.prepare("SELECT * FROM plans WHERE id = ? AND active = 1").get(req.refId) as any;
+    if (!itemRow) throw new BillingError("Unknown plan.", 404);
+    if (itemRow.price_cents === 0) throw new BillingError("The free plan doesn't need a purchase.", 400);
+    amountCents = itemRow.price_cents;
+    itemName = `Aetheria ${itemRow.name} (monthly)`;
+  }
+
+  const paymentId = newId("pay");
+  db.prepare(
+    `INSERT INTO payments (id, user_id, kind, item_ref, amount_cents, currency, status, provider, created_at)
+     VALUES (?, ?, ?, ?, ?, 'usd', 'pending', ?, ?)`
+  ).run(paymentId, userId, req.kind, req.refId, amountCents, provider, nowIso());
+
+  const url =
+    provider === "ziina"
+      ? await createZiinaIntent(paymentId, amountCents, itemName, baseUrl)
+      : await createStripeSession(itemRow, req.kind, amountCents, paymentId, userId, baseUrl);
+
+  return { url, paymentId, provider };
+}
+
+/* ---------------- Ziina ---------------- */
+
+async function createZiinaIntent(
+  paymentId: string,
+  amountCents: number,
+  itemName: string,
+  baseUrl: string
+): Promise<string> {
+  // USD cents → AED fils at the fixed peg.
+  const aedFils = Math.round(amountCents * USD_AED_PEG);
+  const res = await fetch(`${ZIINA_API}/payment_intent`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${ZIINA_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      amount: aedFils,
+      currency_code: "AED",
+      message: itemName,
+      success_url: `${baseUrl}/points?checkout=success&pay=${paymentId}`,
+      cancel_url: `${baseUrl}/points?checkout=cancelled`,
+      failure_url: `${baseUrl}/points?checkout=cancelled`,
+      test: ZIINA_TEST,
+      allow_tips: false,
+    }),
+  });
+  const data: any = await res.json().catch(() => ({}));
+  if (!res.ok || !data?.redirect_url) {
+    console.error("[billing] ziina intent failed:", res.status, data);
+    throw new BillingError(data?.message || "Ziina couldn't create the payment. Try again.", 502);
+  }
+  db.prepare("UPDATE payments SET stripe_session_id = ? WHERE id = ?").run(
+    `ziina:${data.id}`,
+    paymentId
+  );
+  return data.redirect_url;
+}
+
+/** Server-side confirmation: ask Ziina for the intent's real status and
+ *  fulfil if completed. The client can never lie about payment success. */
+export async function confirmZiinaPayment(paymentId: string): Promise<{
+  status: string;
+  fulfilled: boolean;
+}> {
+  const pay = db.prepare("SELECT * FROM payments WHERE id = ?").get(paymentId) as any;
+  if (!pay) throw new BillingError("Unknown payment.", 404);
+  if (pay.provider !== "ziina") {
+    return { status: pay.status, fulfilled: pay.status === "succeeded" };
+  }
+  if (pay.status === "succeeded") return { status: "succeeded", fulfilled: true };
+
+  const ref = String(pay.stripe_session_id || "").replace(/^ziina:/, "");
+  if (!ref) throw new BillingError("Payment has no provider reference.", 409);
+
+  const res = await fetch(`${ZIINA_API}/payment_intent/${ref}`, {
+    headers: { Authorization: `Bearer ${ZIINA_TOKEN}` },
+  });
+  const data: any = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new BillingError("Couldn't verify the payment with Ziina.", 502);
+  }
+
+  if (data.status === "completed") {
+    const fulfilled = fulfillPaymentRow(pay, data.account_id || null);
+    return { status: "completed", fulfilled };
+  }
+  return { status: data.status || "unknown", fulfilled: false };
+}
+
+/* ---------------- Stripe ---------------- */
+
 async function ensureStripePrice(
   table: "plans" | "credit_packages",
   rowId: string,
@@ -147,92 +326,69 @@ async function ensureStripePrice(
   return price.id;
 }
 
-/* ------------------------------------------------------------------ */
-/* Checkout                                                            */
-/* ------------------------------------------------------------------ */
-export interface CheckoutRequest {
-  kind: "credits" | "subscription";
-  refId: string; // package id or plan id
-}
-
-export async function createCheckout(
+async function createStripeSession(
+  itemRow: any,
+  kind: "credits" | "subscription",
+  amountCents: number,
+  paymentId: string,
   userId: string,
-  req: CheckoutRequest,
   baseUrl: string
-): Promise<{ url: string; paymentId: string }> {
-  const stripe = getStripe();
-  if (!stripe) throw new BillingError("Payments aren't configured on this deployment.", 503);
-
-  let priceId: string;
-  let amountCents: number;
-  let itemName: string;
-
-  if (req.kind === "credits") {
-    const pack = db.prepare("SELECT * FROM credit_packages WHERE id = ? AND active = 1").get(req.refId) as any;
-    if (!pack) throw new BillingError("Unknown credit package.", 404);
-    priceId = await ensureStripePrice("credit_packages", pack.id, `Aetheria ${pack.credits} Points`, pack.price_cents, false);
-    amountCents = pack.price_cents;
-    itemName = `${pack.credits} points`;
-  } else {
-    const plan = db.prepare("SELECT * FROM plans WHERE id = ? AND active = 1").get(req.refId) as any;
-    if (!plan) throw new BillingError("Unknown plan.", 404);
-    if (plan.price_cents === 0) throw new BillingError("The free plan doesn't need a purchase.", 400);
-    priceId = await ensureStripePrice("plans", plan.id, `Aetheria ${plan.name}`, plan.price_cents, true);
-    amountCents = plan.price_cents;
-    itemName = `Aetheria ${plan.name}`;
-  }
-
-  const paymentId = newId("pay");
-  db.prepare(
-    `INSERT INTO payments (id, user_id, kind, item_ref, amount_cents, currency, status, created_at)
-     VALUES (?, ?, ?, ?, ?, 'usd', 'pending', ?)`
-  ).run(paymentId, userId, req.kind, req.refId, amountCents, nowIso());
+): Promise<string> {
+  const stripe = getStripe()!;
+  const table = kind === "credits" ? "credit_packages" : "plans";
+  const priceId = await ensureStripePrice(
+    table,
+    itemRow.id,
+    kind === "credits" ? `Aetheria ${itemRow.credits} Points` : `Aetheria ${itemRow.name}`,
+    amountCents,
+    kind === "subscription"
+  );
 
   const session = await stripe.checkout.sessions.create({
-    mode: req.kind === "credits" ? "payment" : "subscription",
+    mode: kind === "credits" ? "payment" : "subscription",
     line_items: [{ price: priceId, quantity: 1 }],
-    metadata: { paymentId, userId, kind: req.kind, refId: req.refId },
-    success_url: `${baseUrl}/points?checkout=success`,
+    metadata: { paymentId, userId, kind, refId: itemRow.id },
+    success_url: `${baseUrl}/points?checkout=success&pay=${paymentId}`,
     cancel_url: `${baseUrl}/points?checkout=cancelled`,
-    customer_email: undefined,
   });
 
-  db.prepare("UPDATE payments SET stripe_session_id = ? WHERE id = ?").run(session.id, paymentId);
-  return { url: session.url || "", paymentId };
-}
-
-export class BillingError extends Error {
-  status: number;
-  constructor(message: string, status: number) {
-    super(message);
-    this.status = status;
-  }
+  db.prepare("UPDATE payments SET stripe_session_id = ? WHERE id = ?").run(
+    `stripe:${session.id}`,
+    paymentId
+  );
+  return session.url || "";
 }
 
 /* ------------------------------------------------------------------ */
-/* Webhook — the ONLY place purchases are fulfilled. The client never  */
-/* confirms a payment; Stripe's signed webhook does.                   */
+/* Stripe webhook — signature-verified fulfilment                      */
 /* ------------------------------------------------------------------ */
 export async function handleWebhook(rawBody: string, signature: string | null): Promise<void> {
   const stripe = getStripe();
-  if (!stripe || !WEBHOOK_SECRET) {
+  if (!stripe || !STRIPE_WEBHOOK_SECRET) {
     throw new BillingError("Webhook not configured.", 503);
   }
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(rawBody, signature || "", WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(rawBody, signature || "", STRIPE_WEBHOOK_SECRET);
   } catch {
     throw new BillingError("Invalid webhook signature.", 400);
   }
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    await fulfillSession(stripe, session);
+    const paymentId = session.metadata?.paymentId;
+    if (!paymentId) return;
+    const pay = db.prepare("SELECT * FROM payments WHERE id = ?").get(paymentId) as any;
+    if (pay) {
+      fulfillPaymentRow(pay, typeof session.customer === "string" ? session.customer : null);
+    }
   } else if (event.type === "customer.subscription.deleted") {
     const sub = event.data.object as Stripe.Subscription;
     const row = db
-      .prepare("SELECT user_id FROM subscriptions WHERE stripe_subscription_id = ?")
-      .get(sub.id) as any;
+      .prepare(
+        "SELECT user_id FROM subscriptions WHERE stripe_subscription_id = ? OR stripe_customer_id = ?"
+      )
+      .get(sub.id, typeof sub.customer === "string" ? sub.customer : "") as any;
     if (row) {
       db.prepare(
         "UPDATE subscriptions SET status = 'canceled', updated_at = ? WHERE user_id = ?"
@@ -242,8 +398,10 @@ export async function handleWebhook(rawBody: string, signature: string | null): 
   } else if (event.type === "customer.subscription.updated") {
     const sub = event.data.object as Stripe.Subscription;
     const row = db
-      .prepare("SELECT user_id FROM subscriptions WHERE stripe_subscription_id = ?")
-      .get(sub.id) as any;
+      .prepare(
+        "SELECT user_id FROM subscriptions WHERE stripe_subscription_id = ? OR stripe_customer_id = ?"
+      )
+      .get(sub.id, typeof sub.customer === "string" ? sub.customer : "") as any;
     if (row) {
       const active = sub.status === "active" || sub.status === "trialing";
       const periodEnd = sub.items?.data?.[0]?.current_period_end;
@@ -255,59 +413,18 @@ export async function handleWebhook(rawBody: string, signature: string | null): 
         nowIso(),
         row.user_id
       );
-      db.prepare("UPDATE users SET plan = ? WHERE id = ?").run(active ? subPlanCode(sub) : "free", row.user_id);
+      db.prepare("UPDATE users SET plan = ? WHERE id = ?").run(
+        active ? subPlanCode(sub) : "free",
+        row.user_id
+      );
     }
   }
 }
 
 function subPlanCode(sub: Stripe.Subscription): string {
-  // Map the Stripe price back to a plan via stored price ids.
   const priceId = sub.items?.data?.[0]?.price?.id;
   const row = db.prepare("SELECT code FROM plans WHERE stripe_price_id = ?").get(priceId) as any;
   return row?.code || "plus";
-}
-
-async function fulfillSession(stripe: Stripe, session: Stripe.Checkout.Session): Promise<void> {
-  const paymentId = session.metadata?.paymentId;
-  const userId = session.metadata?.userId;
-  const kind = session.metadata?.kind;
-  const refId = session.metadata?.refId;
-  if (!paymentId || !userId) return;
-
-  const tx = db.transaction(() => {
-    const pay = db.prepare("SELECT * FROM payments WHERE id = ?").get(paymentId) as any;
-    if (!pay || pay.status === "succeeded") return; // idempotent
-    db.prepare(
-      "UPDATE payments SET status = 'succeeded', stripe_customer_id = ? WHERE id = ?"
-    ).run(typeof session.customer === "string" ? session.customer : null, paymentId);
-
-    if (kind === "credits") {
-      const pack = db.prepare("SELECT * FROM credit_packages WHERE id = ?").get(refId) as any;
-      if (pack) addPoints(userId, pack.credits, "purchase", `Purchased ${pack.name}`);
-    } else if (kind === "subscription") {
-      const plan = db.prepare("SELECT * FROM plans WHERE id = ?").get(refId) as any;
-      if (plan) {
-        db.prepare(
-          `INSERT INTO subscriptions (user_id, plan_code, stripe_subscription_id, stripe_customer_id, status, updated_at)
-           VALUES (?, ?, ?, ?, 'active', ?)
-           ON CONFLICT(user_id) DO UPDATE SET
-             plan_code = excluded.plan_code,
-             stripe_subscription_id = excluded.stripe_subscription_id,
-             stripe_customer_id = excluded.stripe_customer_id,
-             status = 'active',
-             updated_at = excluded.updated_at`
-        ).run(
-          userId,
-          plan.code,
-          typeof session.subscription === "string" ? session.subscription : null,
-          typeof session.customer === "string" ? session.customer : null,
-          nowIso()
-        );
-        db.prepare("UPDATE users SET plan = ? WHERE id = ?").run(plan.code, userId);
-      }
-    }
-  });
-  tx();
 }
 
 /* ------------------------------------------------------------------ */

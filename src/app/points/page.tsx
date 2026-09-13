@@ -11,6 +11,7 @@ import { AuthGate, useToast } from "@/components/ui";
 
 interface BillingData {
   configured: boolean;
+  provider: "ziina" | "stripe" | null;
   plans: {
     id: string;
     code: string;
@@ -54,7 +55,7 @@ function fmtDate(iso: string): string {
 
 export default function PointsPage() {
   const { user } = useAuth();
-  const { balance, canClaim, streak, config, claimDaily, redeem } = usePoints();
+  const { balance, canClaim, streak, config, claimDaily, redeem, refresh } = usePoints();
   const router = useRouter();
 
   const [transactions, setTransactions] = useState<Tx[]>([]);
@@ -77,9 +78,27 @@ export default function PointsPage() {
   useEffect(() => {
     const qs = new URLSearchParams(window.location.search);
     const co = qs.get("checkout");
-    if (co === "success") toast("Payment received — your purchase is being fulfilled.", "success");
+    const pay = qs.get("pay");
     if (co === "cancelled") toast("Checkout cancelled — nothing was charged.", "info");
-  }, [toast]);
+    if (co === "success" && pay) {
+      // Server verifies with the provider; the client never confirms payment.
+      apiFetch<{ fulfilled: boolean; status: string }>(
+        `/api/billing/confirm?payment=${encodeURIComponent(pay)}`
+      )
+        .then((r) => {
+          if (r.fulfilled) {
+            toast("Payment completed — your purchase is now active.", "success");
+            refresh();
+          } else {
+            toast("Payment is still processing — it will activate in a moment.", "info");
+          }
+        })
+        .catch((e) => toast(e?.message || "Couldn't verify the payment.", "error"));
+    } else if (co === "success") {
+      toast("Payment received — your purchase is being fulfilled.", "success");
+      refresh();
+    }
+  }, [toast, refresh]);
 
   async function buy(kind: "credits" | "subscription", refId: string) {
     setBuying(refId);
@@ -240,10 +259,21 @@ export default function PointsPage() {
                   </button>
                 ))}
               </div>
+              {billing?.provider === "ziina" && (
+                <p className="text-[11px] text-text-faint mb-2">
+                  Payments are processed securely by Ziina (UAE) — charged in AED at the
+                  fixed USD peg. Cards &amp; Apple Pay accepted.
+                </p>
+              )}
+              {billing?.provider === "stripe" && (
+                <p className="text-[11px] text-text-faint mb-2">
+                  Payments are processed securely by Stripe. Cards &amp; wallets accepted.
+                </p>
+              )}
               {billing && !billing.configured && (
                 <p className="text-[11px] text-text-faint mb-2">
-                  Card payments activate once Stripe keys are configured on this deployment
-                  (STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET). Codes still work.
+                  Card payments activate once a provider key is configured
+                  (ZIINA_ACCESS_TOKEN or STRIPE_SECRET_KEY). Codes still work.
                 </p>
               )}
 

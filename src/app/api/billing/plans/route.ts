@@ -3,6 +3,7 @@ import {
   listPlans,
   listPackages,
   paymentsConfigured,
+  activeProvider,
   getSubscription,
   planFeaturesFor,
 } from "@/server/services/billing";
@@ -13,6 +14,7 @@ export async function GET(req: Request) {
   const user = requireUser(req);
   return json({
     configured: paymentsConfigured(),
+    provider: activeProvider(),
     plans: listPlans(),
     packages: listPackages(),
     subscription: user ? getSubscription(user.id) : null,

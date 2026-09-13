@@ -90,6 +90,8 @@ Keep it alive with `pm2 start npm --name aetheria -- start` or a systemd unit.
 | `DATABASE_PATH` | no | SQLite file path (default `./data/aetheria.db`) |
 | `PORT` | no | Port (default 3000) |
 | `STARTING_POINTS` | no | One-time welcome points per account (default 150) |
+| `ZIINA_ACCESS_TOKEN` | no* | UAE payments via Ziina (no trade license; preferred when set) |
+| `ZIINA_TEST` | no | `true` = Ziina test mode (no real charges) |
 | `STRIPE_SECRET_KEY` | no* | Enables card payments/subscriptions (`*`payments off without it) |
 | `STRIPE_WEBHOOK_SECRET` | no* | Signing secret for `https://YOUR-DOMAIN/api/billing/webhook` |
 
