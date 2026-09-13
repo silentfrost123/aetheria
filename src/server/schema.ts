@@ -400,4 +400,58 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit(created_at);
     `,
   },
+  {
+    name: "011_billing",
+    sql: `
+      CREATE TABLE IF NOT EXISTS plans (
+        id TEXT PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        price_cents INTEGER NOT NULL DEFAULT 0,
+        currency TEXT NOT NULL DEFAULT 'usd',
+        interval TEXT NOT NULL DEFAULT 'month',
+        stripe_price_id TEXT,
+        features TEXT NOT NULL DEFAULT '{}',
+        blurb TEXT NOT NULL DEFAULT '',
+        active INTEGER NOT NULL DEFAULT 1,
+        sort INTEGER NOT NULL DEFAULT 0
+      );
+
+      CREATE TABLE IF NOT EXISTS credit_packages (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        credits INTEGER NOT NULL,
+        price_cents INTEGER NOT NULL,
+        currency TEXT NOT NULL DEFAULT 'usd',
+        stripe_price_id TEXT,
+        active INTEGER NOT NULL DEFAULT 1,
+        sort INTEGER NOT NULL DEFAULT 0
+      );
+
+      CREATE TABLE IF NOT EXISTS payments (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL,
+        item_ref TEXT NOT NULL DEFAULT '',
+        stripe_session_id TEXT,
+        stripe_customer_id TEXT,
+        amount_cents INTEGER NOT NULL,
+        currency TEXT NOT NULL DEFAULT 'usd',
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id, created_at);
+      CREATE INDEX IF NOT EXISTS idx_payments_session ON payments(stripe_session_id);
+
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        plan_code TEXT NOT NULL,
+        stripe_subscription_id TEXT,
+        stripe_customer_id TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        current_period_end TEXT,
+        updated_at TEXT NOT NULL
+      );
+    `,
+  },
 ];

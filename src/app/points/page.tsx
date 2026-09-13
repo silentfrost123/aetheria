@@ -7,7 +7,22 @@ import { useAuth } from "@/lib/auth-context";
 import { usePoints } from "@/lib/points-context";
 import { apiFetch } from "@/lib/api";
 import { Icon } from "@/components/icons";
-import { AuthGate } from "@/components/ui";
+import { AuthGate, useToast } from "@/components/ui";
+
+interface BillingData {
+  configured: boolean;
+  plans: {
+    id: string;
+    code: string;
+    name: string;
+    priceCents: number;
+    interval: string;
+    features: Record<string, any>;
+    blurb: string;
+  }[];
+  packages: { id: string; name: string; credits: number; priceCents: number }[];
+  subscription: { planCode: string; status: string } | null;
+}
 
 interface Tx {
   id: string;
@@ -48,6 +63,39 @@ export default function PointsPage() {
   const [code, setCode] = useState("");
   const [redeeming, setRedeeming] = useState(false);
   const [redeemMsg, setRedeemMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [billing, setBilling] = useState<BillingData | null>(null);
+  const [buying, setBuying] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!user) return;
+    apiFetch<BillingData>("/api/billing/plans")
+      .then(setBilling)
+      .catch(() => setBilling(null));
+  }, [user]);
+
+  useEffect(() => {
+    const qs = new URLSearchParams(window.location.search);
+    const co = qs.get("checkout");
+    if (co === "success") toast("Payment received — your purchase is being fulfilled.", "success");
+    if (co === "cancelled") toast("Checkout cancelled — nothing was charged.", "info");
+  }, [toast]);
+
+  async function buy(kind: "credits" | "subscription", refId: string) {
+    setBuying(refId);
+    try {
+      const r = await apiFetch<{ url: string }>("/api/billing/checkout", {
+        method: "POST",
+        body: JSON.stringify({ kind, refId }),
+      });
+      if (r.url) window.location.href = r.url;
+      else toast("Stripe returned no checkout URL.", "error");
+    } catch (e: any) {
+      toast(e?.message || "Couldn't start checkout.", "error");
+    } finally {
+      setBuying(null);
+    }
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -169,36 +217,35 @@ export default function PointsPage() {
                 Run out? Buy points to keep the story going.
               </p>
 
-              <div className="grid grid-cols-3 gap-3 mb-6">
-                {[
-                  { amount: 1000, price: "$1.99" },
-                  { amount: 5000, price: "$7.99" },
-                  { amount: 12000, price: "$15.99" },
-                ].map((p) => (
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {(billing?.packages || []).map((p) => (
                   <button
-                    key={p.amount}
-                    onClick={() => {
-                      // Placeholder — wire to your payment provider (Stripe, etc.)
-                      setRedeemMsg({
-                        ok: false,
-                        text: "Payments aren't enabled yet. Redeem a code below instead.",
-                      });
-                    }}
-                    className="card-interactive p-4 text-center group"
+                    key={p.id}
+                    onClick={() => buy("credits", p.id)}
+                    disabled={buying !== null || !billing?.configured}
+                    className="card-interactive p-4 text-center group disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="flex items-center justify-center gap-1.5 text-accent-amber mb-1">
                       <Icon name="coins" className="w-4 h-4" />
                       <span className="font-display text-2xl font-bold tabular-nums">
-                        {p.amount.toLocaleString()}
+                        {p.credits.toLocaleString()}
                       </span>
                     </div>
-                    <div className="text-sm font-semibold text-text">{p.price}</div>
+                    <div className="text-sm font-semibold text-text">
+                      ${(p.priceCents / 100).toFixed(2)}
+                    </div>
                     <div className="text-[11px] text-text-faint mt-0.5 group-hover:text-accent-soft transition-colors">
-                      Buy now
+                      {buying === p.id ? "Opening Stripe…" : "Buy now"}
                     </div>
                   </button>
                 ))}
               </div>
+              {billing && !billing.configured && (
+                <p className="text-[11px] text-text-faint mb-2">
+                  Card payments activate once Stripe keys are configured on this deployment
+                  (STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET). Codes still work.
+                </p>
+              )}
 
               {/* Redeem code */}
               <div className="border-t border-border-soft pt-5">
@@ -255,6 +302,75 @@ export default function PointsPage() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Membership plans */}
+        <div className="mt-10">
+          <h2 className="font-display text-lg font-bold mb-1">Membership</h2>
+          <p className="text-sm text-text-dim mb-5">
+            Upgrade for more personas and bonus points every day.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {(billing?.plans || []).map((pl) => {
+              const current = (user?.plan || "free") === pl.code;
+              const subActive =
+                billing?.subscription?.planCode === pl.code &&
+                billing.subscription.status === "active";
+              return (
+                <div
+                  key={pl.id}
+                  className={`card p-5 flex flex-col ${
+                    current ? "border-accent/50 shadow-glow-sm" : ""
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-display font-bold">{pl.name}</span>
+                    {current && (
+                      <span className="chip text-[10px] bg-accent/15 border-accent/40 text-accent-soft">
+                        Current
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2 font-display text-2xl font-bold tabular-nums">
+                    ${(pl.priceCents / 100).toFixed(0)}
+                    <span className="text-xs text-text-faint font-normal">/{pl.interval}</span>
+                  </div>
+                  <p className="text-xs text-text-dim mt-2 leading-relaxed flex-1">{pl.blurb}</p>
+                  <ul className="text-[11px] text-text-dim space-y-1 mt-3 mb-4">
+                    {typeof pl.features.maxPersonas === "number" && (
+                      <li>✦ {pl.features.maxPersonas} personas</li>
+                    )}
+                    {typeof pl.features.dailyBonus === "number" && pl.features.dailyBonus > 0 && (
+                      <li>✦ +{pl.features.dailyBonus} daily bonus points</li>
+                    )}
+                  </ul>
+                  {pl.priceCents > 0 ? (
+                    <button
+                      className={`w-full ${current && subActive ? "btn-ghost" : "btn-primary"}`}
+                      disabled={buying !== null || !billing?.configured || (current && subActive)}
+                      onClick={() => buy("subscription", pl.id)}
+                    >
+                      {buying === pl.id
+                        ? "Opening Stripe…"
+                        : current && subActive
+                          ? "Active"
+                          : "Upgrade"}
+                    </button>
+                  ) : (
+                    <div className="text-center text-xs text-text-faint py-2">
+                      Everyone starts here
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {billing && !billing.configured && (
+            <p className="text-[11px] text-text-faint mt-3">
+              Subscriptions activate once Stripe is configured — plans and prices shown are the
+              live catalog stored in your database.
+            </p>
+          )}
         </div>
 
         {/* Transaction history */}

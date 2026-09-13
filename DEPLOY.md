@@ -89,6 +89,9 @@ Keep it alive with `pm2 start npm --name aetheria -- start` or a systemd unit.
 | `EMBED_MODEL` | no | Embeddings model (optional) |
 | `DATABASE_PATH` | no | SQLite file path (default `./data/aetheria.db`) |
 | `PORT` | no | Port (default 3000) |
+| `STARTING_POINTS` | no | One-time welcome points per account (default 150) |
+| `STRIPE_SECRET_KEY` | no* | Enables card payments/subscriptions (`*`payments off without it) |
+| `STRIPE_WEBHOOK_SECRET` | no* | Signing secret for `https://YOUR-DOMAIN/api/billing/webhook` |
 
 With **no key at all**, the app still runs using a built-in offline narrative
 engine — useful for a smoke test, but you'll want a real key for quality.

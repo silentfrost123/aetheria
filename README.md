@@ -84,7 +84,21 @@ Points / monetization (optional — defaults shown):
 DAILY_POINTS=500     # free points granted per day (claimed on /points)
 MESSAGE_COST=50      # points deducted per AI message (send, regenerate, swipe)
 STARTING_POINTS=150  # one-time welcome grant so the first message always works
+
+# Stripe (optional — enables card payments & subscriptions on /points)
+# STRIPE_SECRET_KEY=sk_live_...        # or sk_test_...
+# STRIPE_WEBHOOK_SECRET=whsec_...      # from the Stripe webhook endpoint
 ```
+
+**Stripe setup (5 minutes):**
+1. Create a Stripe account → get a secret key (Dashboard → Developers → API keys).
+2. Set `STRIPE_SECRET_KEY` in your host's env vars and restart.
+3. Add a webhook endpoint pointing at `https://YOUR-DOMAIN/api/billing/webhook`,
+   listening for `checkout.session.completed`, `customer.subscription.updated`,
+   `customer.subscription.deleted`. Copy its signing secret into `STRIPE_WEBHOOK_SECRET`.
+4. Done — plans/credit packs are stored in the DB (`plans`, `credit_packages`) and
+   Stripe products/prices are auto-created on first checkout. Purchases are fulfilled
+   **only** via the signed webhook; the client can never confirm a payment.
 
 > Commands like `/roll` and `/status` are free. Every AI reply costs `MESSAGE_COST`.
 
