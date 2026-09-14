@@ -328,7 +328,7 @@ export default function ChatPage() {
 
   const messages = data?.messages || [];
   const allMessages: ChatMessageVM[] = streaming
-    ? [...messages, { id: "streaming", role: "assistant", content: streamText || "…", isStreaming: true }]
+    ? [...messages, { id: "streaming", role: "assistant", content: streamText, isStreaming: true }]
     : messages;
 
   function msgActions(msg: ChatMessageVM) {

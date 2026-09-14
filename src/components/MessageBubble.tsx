@@ -82,6 +82,20 @@ function SystemBody({ text }: { text: string }) {
   );
 }
 
+function ThinkingDots() {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 py-1"
+      role="status"
+      aria-label="Thinking"
+    >
+      <span className="typing-dot" style={{ animationDelay: "0ms" }} />
+      <span className="typing-dot" style={{ animationDelay: "150ms" }} />
+      <span className="typing-dot" style={{ animationDelay: "300ms" }} />
+    </span>
+  );
+}
+
 export interface ChatMessageVM {
   id: string;
   role: string;
@@ -137,7 +151,11 @@ export function MessageBubble({
           </div>
         ) : (
           <div className="rounded-2xl rounded-tl-sm border border-border bg-bg-card/80 px-4 py-3">
-            <StoryBody text={msg.content} />
+            {msg.isStreaming && !msg.content ? (
+              <ThinkingDots />
+            ) : (
+              <StoryBody text={msg.content} />
+            )}
           </div>
         )}
         {actions && <div className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity">{actions}</div>}
