@@ -99,7 +99,7 @@ export default function ProfilePage() {
             <div className="font-semibold">{editing ? "Edit persona" : "New persona"}</div>
             <div className="grid grid-cols-2 gap-4">
               <div><label className="label">Name</label><input className="input" value={form.name || ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div><label className="label">Age</label><input className="input" value={form.age || ""} onChange={(e) => setForm({ ...form, age: e.target.value })} /></div>
+              <div><label className="label">Age</label><input className="input" inputMode="numeric" maxLength={3} value={form.age || ""} onChange={(e) => setForm({ ...form, age: e.target.value.replace(/\D/g, "").slice(0, 3) })} /></div>
             </div>
             <div><label className="label">Occupation</label><input className="input" value={form.occupation || ""} onChange={(e) => setForm({ ...form, occupation: e.target.value })} /></div>
             <div><label className="label">Personality</label><textarea className="input" rows={2} value={form.personality || ""} onChange={(e) => setForm({ ...form, personality: e.target.value })} /></div>

@@ -411,6 +411,8 @@ const PERSONALITY_TRAITS = [
   "romanticInterest", "honesty", "curiosity", "patience",
 ];
 
+const GENDER_STOPS = ["Male", "Non-binary", "Female"];
+
 function CharacterWizard({ remixId, onBack }: { remixId: string | null; onBack: () => void }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -571,8 +573,37 @@ function CharacterWizard({ remixId, onBack }: { remixId: string | null; onBack: 
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><label className="label">Species</label><input className="input" value={species} onChange={(e) => setSpecies(e.target.value)} placeholder="Human, Vampire…" /></div>
-              <div><label className="label">Gender</label><input className="input" value={gender} onChange={(e) => setGender(e.target.value)} placeholder="Female, Male…" /></div>
-              <div><label className="label">Age</label><input className="input" value={age} onChange={(e) => setAge(e.target.value)} placeholder="e.g. 27" /></div>
+              <div>
+                <label className="label">Age</label>
+                <input
+                  className="input"
+                  inputMode="numeric"
+                  maxLength={3}
+                  value={age}
+                  onChange={(e) => setAge(e.target.value.replace(/\D/g, "").slice(0, 3))}
+                  placeholder="e.g. 27"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="label">Gender — {gender || "Non-binary"}</label>
+                <div className="px-1 pt-2 pb-1">
+                  <input
+                    type="range"
+                    min={0}
+                    max={2}
+                    step={1}
+                    value={GENDER_STOPS.indexOf(gender) >= 0 ? GENDER_STOPS.indexOf(gender) : 1}
+                    onChange={(e) => setGender(GENDER_STOPS[Number(e.target.value)])}
+                    className="w-full accent-[#a78bfa] cursor-pointer"
+                    aria-label="Gender"
+                  />
+                  <div className="flex justify-between text-[10px] text-text-faint mt-1">
+                    <span>Male</span>
+                    <span>Non-binary</span>
+                    <span>Female</span>
+                  </div>
+                </div>
+              </div>
               <div><label className="label">Occupation</label><input className="input" value={occupation} onChange={(e) => setOccupation(e.target.value)} placeholder="Knight, Fixer…" /></div>
             </div>
             <div>

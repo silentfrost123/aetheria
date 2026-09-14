@@ -1,5 +1,6 @@
 import { db, nowIso } from "../db";
 import { newId } from "../util";
+import { sanitizeAge } from "./character";
 import type { Persona } from "@/lib/types";
 
 function mapPersona(row: any): Persona {
@@ -36,7 +37,7 @@ export function createPersona(
     id,
     userId,
     input.name || "New Persona",
-    input.age || null,
+    sanitizeAge(input.age),
     input.occupation || null,
     input.personality || "",
     input.appearance || "",
@@ -60,7 +61,7 @@ export function updatePersona(
     `UPDATE personas SET name=?, age=?, occupation=?, personality=?, appearance=?, background=?, avatar=? WHERE id=?`
   ).run(
     next.name,
-    next.age,
+    sanitizeAge(next.age),
     next.occupation,
     next.personality,
     next.appearance,

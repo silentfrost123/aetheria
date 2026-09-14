@@ -4,6 +4,7 @@ import {
   updateCharacter,
   deleteCharacter,
   getCreatorUsername,
+  getViewerSocial,
 } from "@/server/services/character";
 import { getAllEntriesForCharacter } from "@/server/services/lore";
 
@@ -35,6 +36,10 @@ export async function GET(
     character: {
       ...safeChar,
       creator: { id: char.creatorId, username: getCreatorUsername(char.creatorId) },
+    },
+    viewer: {
+      ...getViewerSocial(params.id, user?.id),
+      isOwner,
     },
     lore: isOwner ? getAllEntriesForCharacter(char.id) : undefined,
   });

@@ -125,7 +125,7 @@ export function createCharacter(creatorId: string, input: CharacterInput): Chara
     input.name,
     input.avatar || null,
     input.banner || null,
-    input.age || null,
+    sanitizeAge(input.age),
     input.gender || null,
     input.species || null,
     input.occupation || null,
@@ -171,7 +171,7 @@ export function updateCharacter(
   for (const [k, col] of Object.entries(map)) {
     if ((patch as any)[k] !== undefined) {
       sets.push(`${col} = ?`);
-      vals.push((patch as any)[k]);
+      vals.push(k === "age" ? sanitizeAge((patch as any)[k]) : (patch as any)[k]);
     }
   }
   if (patch.tags !== undefined) {
@@ -243,4 +243,62 @@ export function remixCharacter(id: string, creatorId: string): Character | null 
 export function getCreatorUsername(creatorId: string): string {
   const row = db.prepare("SELECT username FROM users WHERE id = ?").get(creatorId) as any;
   return row?.username || "Unknown";
+}
+
+// ---- Social: likes & favorites (real, persistent) ----
+
+function bumpStat(id: string, key: "likes" | "favorites", delta: number): Record<string, number> {
+  const row = db.prepare("SELECT stats FROM characters WHERE id = ?").get(id) as any;
+  const stats = safeParse<any>(row?.stats || "{}", {});
+  const out: Record<string, number> = {
+    chats: Number(stats.chats) || 0,
+    likes: Number(stats.likes) || 0,
+    favorites: Number(stats.favorites) || 0,
+  };
+  out[key] = Math.max(0, out[key] + delta);
+  db.prepare("UPDATE characters SET stats = ? WHERE id = ?").run(JSON.stringify(out), id);
+  return out;
+}
+
+/** Toggle a like/favorite. Returns the new state + fresh stats, or null if the character doesn't exist. */
+export function toggleSocial(
+  characterId: string,
+  userId: string,
+  kind: "like" | "favorite"
+): { active: boolean; stats: Record<string, number> } | null {
+  const char = getCharacter(characterId);
+  if (!char) return null;
+  const table = kind === "like" ? "likes" : "bookmarks";
+  const statKey = kind === "like" ? "likes" : "favorites";
+  const existing = db
+    .prepare(`SELECT id FROM ${table} WHERE user_id = ? AND target_id = ? AND target_type = 'character'`)
+    .get(userId, characterId) as any;
+  if (existing) {
+    db.prepare(`DELETE FROM ${table} WHERE id = ?`).run(existing.id);
+    return { active: false, stats: bumpStat(characterId, statKey, -1) };
+  }
+  db.prepare(
+    `INSERT INTO ${table} (id, user_id, target_id, target_type, created_at) VALUES (?, ?, ?, 'character', ?)`
+  ).run(newId(kind === "like" ? "lik" : "bkm"), userId, characterId, nowIso());
+  return { active: true, stats: bumpStat(characterId, statKey, 1) };
+}
+
+export function getViewerSocial(
+  characterId: string,
+  userId?: string
+): { liked: boolean; favorited: boolean } {
+  if (!userId) return { liked: false, favorited: false };
+  const liked = !!db
+    .prepare("SELECT id FROM likes WHERE user_id = ? AND target_id = ? AND target_type = 'character'")
+    .get(userId, characterId);
+  const favorited = !!db
+    .prepare("SELECT id FROM bookmarks WHERE user_id = ? AND target_id = ? AND target_type = 'character'")
+    .get(userId, characterId);
+  return { liked, favorited };
+}
+
+/** Strip anything that isn't a digit from age-like fields (server-side guard). */
+export function sanitizeAge(value: unknown): string | null {
+  const digits = String(value ?? "").replace(/\D/g, "").slice(0, 3);
+  return digits || null;
 }

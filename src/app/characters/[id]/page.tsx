@@ -9,7 +9,7 @@ import { CharacterCard, CharacterCardData } from "@/components/cards";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { Icon } from "@/components/icons";
-import { AuthChoiceDialog, useToast } from "@/components/ui";
+import { AuthChoiceDialog, ConfirmDialog, useToast } from "@/components/ui";
 
 interface CharacterFull {
   id: string;
@@ -40,7 +40,13 @@ export default function CharacterProfile() {
   const [similar, setSimilar] = useState<CharacterCardData[]>([]);
   const [tab, setTab] = useState<"about" | "personality" | "creator">("about");
   const [starting, setStarting] = useState(false);
+  const [liked, setLiked] = useState(false);
   const [faved, setFaved] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [favCount, setFavCount] = useState(0);
+  const [isOwner, setIsOwner] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [authChoice, setAuthChoice] = useState(false);
   const [guestBusy, setGuestBusy] = useState(false);
@@ -48,12 +54,80 @@ export default function CharacterProfile() {
   const { toast } = useToast();
 
   useEffect(() => {
-    apiFetch<{ character: CharacterFull }>(`/api/characters/${params.id}`)
-      .then((d) => setChar(d.character))
+    apiFetch<{
+      character: CharacterFull;
+      viewer?: { liked: boolean; favorited: boolean; isOwner: boolean };
+    }>(`/api/characters/${params.id}`)
+      .then((d) => {
+        setChar(d.character);
+        setLiked(!!d.viewer?.liked);
+        setFaved(!!d.viewer?.favorited);
+        setIsOwner(!!d.viewer?.isOwner);
+        setLikeCount(d.character.stats?.likes || 0);
+        setFavCount(d.character.stats?.favorites || 0);
+      })
       .catch(() => setChar(null));
     apiFetch<{ characters: CharacterCardData[] }>("/api/characters?sort=trending")
       .then((d) => setSimilar(d.characters.filter((c) => c.id !== params.id).slice(0, 4)));
   }, [params.id]);
+
+  async function toggleLike() {
+    if (!char) return;
+    if (!user) {
+      router.push("/auth");
+      return;
+    }
+    const next = !liked;
+    setLiked(next);
+    setLikeCount((c) => Math.max(0, c + (next ? 1 : -1)));
+    try {
+      const d = await apiFetch<{ liked: boolean; likes: number }>(`/api/characters/${char.id}/like`, {
+        method: "POST",
+      });
+      setLiked(d.liked);
+      setLikeCount(d.likes);
+    } catch (e: any) {
+      setLiked(!next);
+      setLikeCount((c) => Math.max(0, c + (next ? -1 : 1)));
+      toast(e?.message || "Couldn't update like.", "error");
+    }
+  }
+
+  async function toggleFav() {
+    if (!char) return;
+    if (!user) {
+      router.push("/auth");
+      return;
+    }
+    const next = !faved;
+    setFaved(next);
+    setFavCount((c) => Math.max(0, c + (next ? 1 : -1)));
+    try {
+      const d = await apiFetch<{ favorited: boolean; favorites: number }>(
+        `/api/characters/${char.id}/favorite`,
+        { method: "POST" }
+      );
+      setFaved(d.favorited);
+      setFavCount(d.favorites);
+    } catch (e: any) {
+      setFaved(!next);
+      setFavCount((c) => Math.max(0, c + (next ? -1 : 1)));
+      toast(e?.message || "Couldn't update favorite.", "error");
+    }
+  }
+
+  async function doDelete() {
+    if (!char) return;
+    setDeleting(true);
+    try {
+      await apiFetch(`/api/characters/${char.id}`, { method: "DELETE" });
+      toast("Character deleted.", "success");
+      router.push("/library");
+    } catch (e: any) {
+      toast(e?.message || "Couldn't delete character.", "error");
+      setDeleting(false);
+    }
+  }
 
   async function doStartChat() {
     if (!char) return;
@@ -142,10 +216,33 @@ export default function CharacterProfile() {
                   <Icon name="chat" className="w-4 h-4" />
                   {starting ? "Starting…" : "Chat now"}
                 </button>
-                <button onClick={() => setFaved((f) => !f)} className="btn-ghost flex items-center gap-2">
-                  <Icon name={faved ? "heartFilled" : "heart"} className="w-4 h-4 text-accent-pink" />
-                  {faved ? "Favorited" : "Favorite"}
+                <button
+                  onClick={toggleLike}
+                  className={`btn-ghost flex items-center gap-2 ${liked ? "border-accent-cyan/40 text-accent-cyan" : ""}`}
+                >
+                  <span className={liked ? "" : "opacity-60 grayscale"}>👍</span>
+                  {likeCount.toLocaleString()}
                 </button>
+                <button onClick={toggleFav} className="btn-ghost flex items-center gap-2">
+                  <Icon name={faved ? "heartFilled" : "heart"} className="w-4 h-4 text-accent-pink" />
+                  {faved ? "Favorited" : "Favorite"} · {favCount.toLocaleString()}
+                </button>
+                {isOwner && (
+                  <>
+                    <button
+                      onClick={() => router.push(`/create?remix=${char.id}`)}
+                      className="btn-ghost flex items-center gap-2"
+                    >
+                      <Icon name="create" className="w-4 h-4" /> Edit
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(true)}
+                      className="btn-ghost flex items-center gap-2 text-danger"
+                    >
+                      <Icon name="trash" className="w-4 h-4" /> Delete
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => {
                     navigator.clipboard?.writeText(window.location.href);
@@ -177,8 +274,8 @@ export default function CharacterProfile() {
               </div>
               <div className="mt-4 flex gap-6 text-sm text-text-faint">
                 <span>💬 {(char.stats.chats || 0).toLocaleString()} chats</span>
-                <span>❤️ {(char.stats.likes || 0).toLocaleString()} likes</span>
-                <span>⭐ {(char.stats.favorites || 0).toLocaleString()} favorites</span>
+                <span>❤️ {likeCount.toLocaleString()} likes</span>
+                <span>⭐ {favCount.toLocaleString()} favorites</span>
               </div>
             </div>
           </div>
@@ -259,6 +356,17 @@ export default function CharacterProfile() {
             </div>
           </div>
         )}
+
+        <ConfirmDialog
+          open={confirmDelete}
+          busy={deleting}
+          title={`Delete ${char?.name || "this character"}?`}
+          description="This permanently removes the character, its lore, and any likes or favorites. This can't be undone."
+          confirmLabel="Delete"
+          danger
+          onConfirm={doDelete}
+          onClose={() => setConfirmDelete(false)}
+        />
 
         <AuthChoiceDialog
           open={authChoice}
