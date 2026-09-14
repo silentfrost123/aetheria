@@ -367,3 +367,46 @@ export interface CharacterCardData {
   tags: string[];
   stats: Character["stats"];
 }
+
+// ---- Story engine: quests & inventory ----
+
+export type QuestStatus = "available" | "active" | "completed" | "failed" | "expired";
+
+export interface QuestObjective {
+  text: string;
+  done: boolean;
+}
+
+export interface Quest {
+  id: string;
+  conversationId: string;
+  userId: string;
+  title: string;
+  description: string;
+  objectives: QuestObjective[];
+  status: QuestStatus;
+  difficulty: string;
+  reward: string;
+  giver: string;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string | null;
+}
+
+export type ItemRarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
+
+export interface InventoryItem {
+  id: string;
+  conversationId: string;
+  userId: string;
+  name: string;
+  description: string;
+  rarity: ItemRarity;
+  quantity: number;
+  weight: number;
+  effects: string;
+  lore: string;
+  createdAt: string;
+  updatedAt: string;
+}

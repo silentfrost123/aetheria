@@ -9,6 +9,8 @@ import type {
   WorldState,
   Message,
   CharacterEmotionalState,
+  Quest,
+  InventoryItem,
 } from "@/lib/types";
 import { NARRATOR_SYSTEM, STORY_MODE_SYSTEM, OOC_SYSTEM } from "./systemPrompts";
 import type { ChatMessage } from "../ai/types";
@@ -23,6 +25,8 @@ export interface PromptContext {
   relationship?: Relationship | null;
   worldState?: WorldState | null;
   emotionalState?: CharacterEmotionalState | null;
+  quests?: Quest[];
+  inventory?: InventoryItem[];
   history: Message[];
   mode: "character" | "story";
   responseLength: string;
@@ -199,6 +203,36 @@ export function renderMemories(memories: Memory[]): string {
   );
 }
 
+export function renderQuests(quests: Quest[]): string {
+  const open = quests.filter((q) => q.status === "active" || q.status === "available");
+  if (!open.length) return "";
+  return (
+    "ACTIVE QUESTS (established commitments — characters may reference, pressure, or reward them):\n" +
+    open
+      .slice(0, 6)
+      .map(
+        (q) =>
+          `- ${q.title} [${q.status}]` +
+          (q.objectives?.length
+            ? ` — objectives: ${q.objectives.map((o) => `${o.text}${o.done ? " ✓" : ""}`).join("; ")}`
+            : "") +
+          (q.reward ? ` — reward: ${q.reward}` : "")
+      )
+      .join("\n")
+  );
+}
+
+export function renderInventory(items: InventoryItem[]): string {
+  if (!items.length) return "";
+  return (
+    "USER INVENTORY (the user's character possesses exactly these items — never assume others):\n" +
+    items
+      .slice(0, 12)
+      .map((i) => `- ${i.name} ×${i.quantity}${i.rarity !== "common" ? ` (${i.rarity})` : ""}`)
+      .join("\n")
+  );
+}
+
 // ---- Response length guidance ----
 
 function lengthGuidance(len: string): string {
@@ -262,6 +296,12 @@ export function buildMessages(ctx: PromptContext): ChatMessage[] {
   const ws = renderWorldState(ctx.worldState);
   if (ws) sysParts.push(ws);
 
+  // 8b. Quests + inventory (story engine state)
+  const questText = renderQuests(ctx.quests || []);
+  if (questText) sysParts.push(questText);
+  const invText = renderInventory(ctx.inventory || []);
+  if (invText) sysParts.push(invText);
+
   // 9. Relationship + emotional state
   const rel = renderRelationship(ctx.relationship);
   if (rel) sysParts.push(rel);
@@ -272,6 +312,7 @@ export function buildMessages(ctx: PromptContext): ChatMessage[] {
   const post = [
     lengthGuidance(ctx.responseLength),
     "Remember: never write the user's dialogue, thoughts, or decisions.",
+    "Never fabricate dice rolls or random outcomes — chance is resolved by the game system when the user rolls.",
     ctx.antiRepetition.length
       ? `Avoid reusing these recently-used phrases/descriptions unless intentional: ${ctx.antiRepetition
           .slice(0, 12)

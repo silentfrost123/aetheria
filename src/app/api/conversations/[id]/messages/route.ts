@@ -16,6 +16,12 @@ import { getEntriesForCharacter, getEntriesForWorld } from "@/server/services/lo
 import { getCharacter } from "@/server/services/character";
 import { loadEmotionalState } from "@/server/services/generation";
 import { getWorld } from "@/server/services/world";
+import {
+  queueStoryExtraction,
+  maybeRunDirector,
+  listQuests,
+  listInventory,
+} from "@/server/services/storyEngine";
 import { nowIso } from "@/server/util";
 import crypto from "node:crypto";
 
@@ -105,6 +111,8 @@ export async function POST(
         stored = true;
 
         queueMemoryExtraction(conv.id, user.id, conv.characterId ?? null, content, fullText);
+        queueStoryExtraction(conv.id, user.id, conv.characterId ?? null, content, fullText);
+        maybeRunDirector(conv.id, user.id);
 
         send("done", {
           messageId: assistantMsg.id,
@@ -214,10 +222,37 @@ async function handleCommand(
     };
   }
 
+  if (c === "quests" || c === "quest") {
+    const quests = listQuests(conversationId).filter(
+      (q) => q.status === "active" || q.status === "available"
+    );
+    if (!quests.length) return { text: "*No open quests. The road ahead is your own.*" };
+    return {
+      text:
+        "**Open quests**\n" +
+        quests
+          .map(
+            (q) =>
+              `⚔️ **${q.title}** [${q.status}]${q.objectives.length ? ` — ${q.objectives.filter((o) => o.done).length}/${q.objectives.length} objectives` : ""}${q.reward ? ` — reward: ${q.reward}` : ""}`
+          )
+          .join("\n"),
+    };
+  }
+
+  if (c === "inventory" || c === "inv" || c === "items") {
+    const items = listInventory(conversationId);
+    if (!items.length) return { text: "*Your hands are empty.*" };
+    return {
+      text:
+        "**Inventory**\n" +
+        items.map((i) => `🎒 ${i.name} ×${i.quantity}${i.rarity !== "common" ? ` (${i.rarity})` : ""}`).join("\n"),
+    };
+  }
+
   if (c === "help") {
     return {
       text:
-        "Available commands:\n/roll d20 · /status · /memory · /lore · /scene · /ooc <text> · /help",
+        "Available commands:\n/roll d20 · /status · /memory · /lore · /scene · /quests · /inventory · /ooc <text> · /help",
     };
   }
 

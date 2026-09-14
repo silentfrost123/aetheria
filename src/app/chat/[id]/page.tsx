@@ -51,6 +51,43 @@ interface ChatData {
   relationship: RelationshipVM | null;
   worldState: WorldStateVM | null;
   memories: MemoryVM[];
+  quests: QuestVM[];
+  inventory: ItemVM[];
+}
+
+interface QuestVM {
+  id: string;
+  title: string;
+  description: string;
+  objectives: { text: string; done: boolean }[];
+  status: "available" | "active" | "completed" | "failed" | "expired";
+  difficulty: string;
+  reward: string;
+  giver: string;
+}
+
+interface ItemVM {
+  id: string;
+  name: string;
+  description: string;
+  rarity: string;
+  quantity: number;
+  effects: string;
+}
+
+function rarityColor(r: string) {
+  switch (r) {
+    case "legendary":
+      return "text-accent-amber";
+    case "epic":
+      return "text-accent-pink";
+    case "rare":
+      return "text-accent-cyan";
+    case "uncommon":
+      return "text-accent-emerald";
+    default:
+      return "text-text-faint";
+  }
 }
 
 export default function ChatPage() {
@@ -65,7 +102,7 @@ export default function ChatPage() {
   const [streamText, setStreamText] = useState("");
   const [ooc, setOoc] = useState(false);
   const [rightOpen, setRightOpen] = useState(true);
-  const [rightTab, setRightTab] = useState<"scene" | "memory" | "world">("scene");
+  const [rightTab, setRightTab] = useState<"scene" | "memory" | "quests" | "items" | "world">("scene");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -326,6 +363,29 @@ export default function ChatPage() {
     });
   }
 
+  async function patchQuest(id: string, patch: { status?: string; objectiveIndex?: number }) {
+    try {
+      await apiFetch(`/api/quests/${id}`, { method: "PATCH", body: JSON.stringify(patch) });
+      await load();
+    } catch (e: any) {
+      toast(e?.message || "Something went wrong.", "error");
+    }
+  }
+
+  function discardItem(it: ItemVM) {
+    setConfirm({
+      title: `Discard ${it.name}?`,
+      description: "It's gone for good.",
+      confirmLabel: "Discard",
+      danger: true,
+      action: async () => {
+        await apiFetch(`/api/inventory/${it.id}`, { method: "DELETE" });
+        await load();
+        toast("Item discarded.", "success");
+      },
+    });
+  }
+
   const messages = data?.messages || [];
   const allMessages: ChatMessageVM[] = streaming
     ? [...messages, { id: "streaming", role: "assistant", content: streamText, isStreaming: true }]
@@ -541,7 +601,7 @@ export default function ChatPage() {
         {rightOpen && (
           <aside className="hidden md:flex flex-col w-72 border-l border-border-soft bg-bg-soft/60">
             <div className="flex border-b border-border-soft">
-              {(["scene", "memory", "world"] as const).map((t) => (
+              {(["scene", "memory", "quests", "items", "world"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setRightTab(t)}
@@ -602,6 +662,102 @@ export default function ChatPage() {
                   ))}
                 </div>
               )}
+              {rightTab === "quests" && (
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-text-faint uppercase tracking-wide">Quests</h3>
+                  {!data?.quests.length && (
+                    <p className="text-sm text-text-faint">No quests yet. Characters may offer tasks as your story unfolds.</p>
+                  )}
+                  {data?.quests.map((q) => (
+                    <div key={q.id} className={`card p-3 text-sm ${q.status === "active" ? "border-accent-amber/30" : ""}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-semibold text-sm leading-snug">⚔️ {q.title}</div>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 capitalize ${
+                            q.status === "active"
+                              ? "bg-accent-amber/15 text-accent-amber"
+                              : q.status === "available"
+                              ? "bg-accent/15 text-accent-soft"
+                              : q.status === "completed"
+                              ? "bg-accent-emerald/15 text-accent-emerald"
+                              : "bg-white/5 text-text-faint"
+                          }`}
+                        >
+                          {q.status}
+                        </span>
+                      </div>
+                      {q.description && <p className="text-xs text-text-dim mt-1">{q.description}</p>}
+                      {q.objectives.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {q.objectives.map((o, i) => (
+                            <div
+                              key={i}
+                              className={`text-xs flex items-start gap-1.5 ${o.done ? "text-text-faint line-through" : "text-text-dim"}`}
+                            >
+                              <span>{o.done ? "☑" : "☐"}</span>
+                              <span>{o.text}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {(q.reward || q.giver) && (
+                        <div className="text-[10px] text-text-faint mt-1.5">
+                          {q.giver ? `From ${q.giver}` : ""}
+                          {q.giver && q.reward ? " · " : ""}
+                          {q.reward ? `Reward: ${q.reward}` : ""}
+                        </div>
+                      )}
+                      {(q.status === "active" || q.status === "available") && (
+                        <div className="flex gap-1.5 mt-2">
+                          {q.status === "available" && (
+                            <button
+                              onClick={() => patchQuest(q.id, { status: "active" })}
+                              className="text-[11px] px-2 py-1 rounded-lg bg-accent/15 text-accent-soft hover:bg-accent/25"
+                            >
+                              Accept
+                            </button>
+                          )}
+                          <button
+                            onClick={() => patchQuest(q.id, { status: "completed" })}
+                            className="text-[11px] px-2 py-1 rounded-lg bg-accent-emerald/15 text-accent-emerald hover:bg-accent-emerald/25"
+                          >
+                            Complete
+                          </button>
+                          <button
+                            onClick={() => patchQuest(q.id, { status: "failed" })}
+                            className="text-[11px] px-2 py-1 rounded-lg bg-danger/15 text-danger hover:bg-danger/25"
+                          >
+                            Abandon
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {rightTab === "items" && (
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-text-faint uppercase tracking-wide">Inventory</h3>
+                  {!data?.inventory.length && (
+                    <p className="text-sm text-text-faint">Your hands are empty. Items you gain will appear here.</p>
+                  )}
+                  {data?.inventory.map((it) => (
+                    <div key={it.id} className="card p-3 text-sm flex items-start gap-2">
+                      <span>🎒</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium leading-snug">
+                          {it.name} <span className="text-text-faint">×{it.quantity}</span>
+                        </div>
+                        {it.description && <div className="text-xs text-text-dim mt-0.5">{it.description}</div>}
+                        {it.rarity !== "common" && (
+                          <div className={`text-[10px] mt-0.5 capitalize ${rarityColor(it.rarity)}`}>{it.rarity}</div>
+                        )}
+                      </div>
+                      <IconBtn icon="trash" onClick={() => discardItem(it)} title="Discard" />
+                    </div>
+                  ))}
+                </div>
+              )}
               {rightTab === "world" && (
                 <div className="space-y-3">
                   <h3 className="text-xs font-semibold text-text-faint uppercase tracking-wide">World</h3>
@@ -626,6 +782,8 @@ export default function ChatPage() {
                     <div>/memory — list memories</div>
                     <div>/lore — world lore</div>
                     <div>/scene — current location</div>
+                    <div>/quests — open quests</div>
+                    <div>/inventory — your items</div>
                     <div>/ooc — talk out of character</div>
                   </div>
                 </div>

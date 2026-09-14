@@ -460,4 +460,42 @@ export const MIGRATIONS: Migration[] = [
       ALTER TABLE payments ADD COLUMN provider TEXT NOT NULL DEFAULT 'stripe';
     `,
   },
+  {
+    name: "013_story_engine",
+    sql: `
+      CREATE TABLE IF NOT EXISTS quests (
+        id TEXT PRIMARY KEY,
+        conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        objectives TEXT NOT NULL DEFAULT '[]',
+        status TEXT NOT NULL DEFAULT 'active',
+        difficulty TEXT NOT NULL DEFAULT 'normal',
+        reward TEXT NOT NULL DEFAULT '',
+        giver TEXT NOT NULL DEFAULT '',
+        source TEXT NOT NULL DEFAULT 'auto',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        completed_at TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_quests_conversation ON quests(conversation_id);
+
+      CREATE TABLE IF NOT EXISTS inventory_items (
+        id TEXT PRIMARY KEY,
+        conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        rarity TEXT NOT NULL DEFAULT 'common',
+        quantity INTEGER NOT NULL DEFAULT 1,
+        weight REAL NOT NULL DEFAULT 0,
+        effects TEXT NOT NULL DEFAULT '',
+        lore TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_inventory_conversation ON inventory_items(conversation_id);
+    `,
+  },
 ];

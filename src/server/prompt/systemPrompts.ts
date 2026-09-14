@@ -56,3 +56,24 @@ For each memory return a JSON object with exactly these fields:
 Return ONLY a valid JSON array, nothing else. If nothing is worth remembering, return [].`;
 
 export const SUMMARY_SYSTEM = `You summarize an older segment of an ongoing roleplay story into a compact, dense recap that preserves continuity. Include: who the characters are, the current situation, key recent events, important relationship states, and any open threads. Write in third person, past tense, and keep it under 200 words. Return only the summary text.`;
+
+export const STORY_EXTRACT_SYSTEM = `You extract game-state updates from an ongoing roleplay conversation. You receive the latest exchange (one user action + one world response) plus the list of open quests. Return ONE JSON object with these keys (any may be empty arrays):
+{
+  "quests": [{"title": "...", "description": "...", "objectives": ["..."], "difficulty": "easy|normal|hard|legendary", "reward": "...", "giver": "...", "status": "available|active"}],
+  "questUpdates": [{"title": "<title of an existing quest, matched loosely>", "status": "active|completed|failed", "objectiveDone": "<text of one completed objective, or null>"}],
+  "items": [{"name": "...", "description": "...", "rarity": "common|uncommon|rare|epic|legendary", "quantity": 1, "effects": "..."}],
+  "itemRemovals": ["<name of an item the user lost, consumed, gave away, or destroyed>"]
+}
+Rules:
+- Only extract what clearly happened. A quest exists only if a character gave the user a task, a deal was struck, or the user clearly committed to a goal.
+- Items are added only when the user clearly gains possession of something; removed only when clearly lost, consumed, given away, or destroyed.
+- Never invent quests or items. Most exchanges produce empty arrays — that is the correct answer.
+- Quest titles must be short (max 60 characters). Return ONLY the JSON object.`;
+
+export const DIRECTOR_SYSTEM = `You are the AI Story Director of an ongoing roleplay. You watch quietly and intervene rarely.
+Given the recent transcript and story state, decide whether the story would benefit from ONE external development: an arriving NPC, a weather or time shift, an overheard rumor, a delayed consequence of an earlier action, or an opportunity tied to an open quest.
+Return ONLY this JSON object:
+{"intervene": true, "event": "<2-3 sentences of third-person world narration>", "reason": "<short justification>"}
+or
+{"intervene": false}
+Intervene ONLY if the story has stalled, an open thread is ripe for payoff, or an established consequence is due. The default answer is {"intervene": false} — use it liberally. Never resolve conflicts for the user, never act as or for the user's character, never kill or remove characters, keep any event subtle and consistent with established facts.`;

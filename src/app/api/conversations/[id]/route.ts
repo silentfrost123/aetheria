@@ -5,6 +5,7 @@ import { getWorld } from "@/server/services/world";
 import { getRelationship } from "@/server/services/relationship";
 import { getWorldState } from "@/server/services/worldState";
 import { listMemories } from "@/server/services/memory";
+import { listQuests, listInventory } from "@/server/services/storyEngine";
 import { db } from "@/server/db";
 
 export const runtime = "nodejs";
@@ -47,6 +48,8 @@ export async function GET(
     relationship: rel,
     worldState,
     memories,
+    quests: listQuests(conv.id),
+    inventory: listInventory(conv.id),
   });
 }
 

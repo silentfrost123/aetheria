@@ -16,6 +16,7 @@ import { getEntriesForCharacter, getEntriesForWorld, retrieveLore } from "./lore
 import { retrieveMemories } from "./memory";
 import { getRelationship } from "./relationship";
 import { getWorldState } from "./worldState";
+import { listQuests, listInventory } from "./storyEngine";
 
 export function loadCharacter(id: string): Character | null {
   const row = db.prepare("SELECT * FROM characters WHERE id = ?").get(id) as any;
@@ -221,6 +222,10 @@ export function assembleContext(
   // World state
   const worldState = getWorldState(conversation.id);
 
+  // Story engine state (quests + inventory)
+  const quests = listQuests(conversation.id);
+  const inventory = listInventory(conversation.id);
+
   // Emotional state
   const emotionalState = char ? loadEmotionalState(char.id) : null;
 
@@ -233,6 +238,8 @@ export function assembleContext(
     memories,
     relationship,
     worldState,
+    quests,
+    inventory,
     emotionalState,
     history,
     mode: conversation.mode === "story" ? "story" : "character",

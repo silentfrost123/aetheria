@@ -201,6 +201,46 @@ async function main() {
     !hasOwn.call(saved, "isAdmin") && !hasOwn.call(saved, "passwordHash") && !hasOwn.call(saved, "__proto__")
   );
 
+  // ---- 9. Story engine authorization (quests & inventory) ------------------
+  console.log("9. Story engine authorization");
+  const qCreate = await api(`/api/conversations/${convId}/quests`, {
+    method: "POST",
+    token: tokenA,
+    body: { title: "Security test quest", objectives: ["Do the thing"] },
+  });
+  const questId = qCreate.data?.quest?.id;
+  check("owner can create a quest", qCreate.status === 201 && !!questId, `(${qCreate.status})`);
+
+  const qPatch = await api(`/api/quests/${questId}`, {
+    method: "PATCH",
+    token: tokenA,
+    body: { objectiveIndex: 0 },
+  });
+  check(
+    "completing all objectives auto-completes the quest",
+    qPatch.data?.quest?.status === "completed",
+    `(got ${qPatch.data?.quest?.status})`
+  );
+
+  const qEvil = await api(`/api/quests/${questId}`, {
+    method: "PATCH",
+    token: tokenB,
+    body: { status: "failed" },
+  });
+  check("foreign user cannot patch another user's quest", qEvil.status === 404, `(${qEvil.status})`);
+
+  const qAnon = await api(`/api/quests/${questId}`, { method: "PATCH", body: { status: "failed" } });
+  check("anonymous cannot patch a quest", qAnon.status === 401, `(${qAnon.status})`);
+
+  const qListB = await api(`/api/conversations/${convId}/quests`, { token: tokenB });
+  check("foreign user cannot list a conversation's quests", qListB.status === 404, `(${qListB.status})`);
+
+  const invAnon = await api("/api/inventory/itm_fake", { method: "DELETE" });
+  check("anonymous cannot delete inventory items", invAnon.status === 401, `(${invAnon.status})`);
+
+  const invBad = await api("/api/inventory/itm_nonexistent", { method: "DELETE", token: tokenA });
+  check("deleting an unknown/foreign item returns 404", invBad.status === 404, `(${invBad.status})`);
+
   // ---- Summary ------------------------------------------------------------
   console.log(`\n${passed} passed, ${failed} failed\n`);
   if (failed > 0) process.exit(1);
