@@ -9,6 +9,7 @@ import { CharacterCard, CharacterCardData } from "@/components/cards";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { Icon } from "@/components/icons";
+import { AuthChoiceDialog, useToast } from "@/components/ui";
 
 interface CharacterFull {
   id: string;
@@ -41,6 +42,10 @@ export default function CharacterProfile() {
   const [starting, setStarting] = useState(false);
   const [faved, setFaved] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [authChoice, setAuthChoice] = useState(false);
+  const [guestBusy, setGuestBusy] = useState(false);
+  const { enterAsGuest } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     apiFetch<{ character: CharacterFull }>(`/api/characters/${params.id}`)
@@ -50,12 +55,8 @@ export default function CharacterProfile() {
       .then((d) => setSimilar(d.characters.filter((c) => c.id !== params.id).slice(0, 4)));
   }, [params.id]);
 
-  async function startChat() {
+  async function doStartChat() {
     if (!char) return;
-    if (!user) {
-      router.push("/auth");
-      return;
-    }
     setStarting(true);
     try {
       const d = await apiFetch<{ conversation: { id: string } }>("/api/conversations", {
@@ -64,9 +65,32 @@ export default function CharacterProfile() {
       });
       router.push(`/chat/${d.conversation.id}`);
     } catch (e: any) {
-      alert(e.message);
+      toast(e?.message || "Couldn't start the chat.", "error");
     } finally {
       setStarting(false);
+    }
+  }
+
+  function startChat() {
+    if (!char) return;
+    if (!user) {
+      // Browsing is open to everyone; chatting needs a session — offer the choice.
+      setAuthChoice(true);
+      return;
+    }
+    doStartChat();
+  }
+
+  async function continueAsGuest() {
+    setGuestBusy(true);
+    try {
+      await enterAsGuest();
+      setAuthChoice(false);
+      await doStartChat();
+    } catch (e: any) {
+      toast(e?.message || "Couldn't create a guest session.", "error");
+    } finally {
+      setGuestBusy(false);
     }
   }
 
@@ -142,7 +166,7 @@ export default function CharacterProfile() {
                         );
                         router.push(`/create?remix=${d.character.id}`);
                       } catch (e: any) {
-                        alert(e.message);
+                        toast(e?.message || "Couldn't remix this character.", "error");
                       }
                     }}
                     className="btn-ghost flex items-center gap-2"
@@ -235,6 +259,16 @@ export default function CharacterProfile() {
             </div>
           </div>
         )}
+
+        <AuthChoiceDialog
+          open={authChoice}
+          busy={guestBusy}
+          title={`Start your story with ${char?.name || "this character"}`}
+          description="Sign in to save this story to your account — or continue as a guest and start chatting right away."
+          onSignIn={() => router.push("/auth")}
+          onGuest={continueAsGuest}
+          onClose={() => setAuthChoice(false)}
+        />
       </div>
     </AppShell>
   );

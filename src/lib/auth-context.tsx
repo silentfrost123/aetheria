@@ -20,6 +20,7 @@ interface AuthContextValue {
     password: string,
     ageVerified: boolean
   ) => Promise<void>;
+  enterAsGuest: () => Promise<ApiUser>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   updateSettings: (settings: any) => Promise<void>;
@@ -33,20 +34,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
+    // Signed-out visitors stay signed out: browsing is open to everyone,
+    // and a guest session is only created when the user explicitly chooses
+    // "Continue as guest" (enterAsGuest) at the moment they want to chat.
     try {
       const data = await apiFetch<{ user: ApiUser | null }>("/api/auth/me");
-      if (data.user) {
-        setUser(data.user);
-      } else {
-        // No session (e.g. blocked cookies/storage in embedded previews).
-        // Auto-provision a guest session so the app is immediately usable.
-        const g = await apiFetch<{ user: ApiUser; token: string }>(
-          "/api/auth/guest",
-          { method: "POST" }
-        );
-        if (g.token) setToken(g.token);
-        setUser(g.user);
-      }
+      setUser(data.user || null);
     } catch {
       setUser(null);
     } finally {
@@ -57,6 +50,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  const enterAsGuest = useCallback(async (): Promise<ApiUser> => {
+    const g = await apiFetch<{ user: ApiUser; token: string }>("/api/auth/guest", {
+      method: "POST",
+    });
+    if (g.token) setToken(g.token);
+    setUser(g.user);
+    return g.user;
+  }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     const data = await apiFetch<{ user: ApiUser; token: string }>("/api/auth/login", {
@@ -104,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, logout, refresh, updateSettings, deleteAccount }}
+      value={{ user, loading, login, register, enterAsGuest, logout, refresh, updateSettings, deleteAccount }}
     >
       {children}
     </AuthContext.Provider>

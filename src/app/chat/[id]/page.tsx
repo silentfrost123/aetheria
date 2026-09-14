@@ -10,7 +10,7 @@ import { apiFetch, streamChat } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { usePoints } from "@/lib/points-context";
 import { Icon } from "@/components/icons";
-import { useToast, ConfirmDialog } from "@/components/ui";
+import { useToast, ConfirmDialog, AuthChoiceDialog } from "@/components/ui";
 
 interface MemoryVM {
   id: string;
@@ -55,7 +55,7 @@ interface ChatData {
 
 export default function ChatPage() {
   const params = useParams();
-  const { user } = useAuth();
+  const { user, enterAsGuest } = useAuth();
   const { balance, config, refresh: refreshPoints } = usePoints();
   const router = useRouter();
   const [outOfPoints, setOutOfPoints] = useState(false);
@@ -81,6 +81,27 @@ export default function ChatPage() {
     action: () => Promise<void>;
   } | null>(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
+  const [guestBusy, setGuestBusy] = useState(false);
+
+  async function guestContinue() {
+    setGuestBusy(true);
+    try {
+      await enterAsGuest();
+      setAuthRequired(false);
+      await load();
+    } catch (e: any) {
+      if (e?.status === 401) {
+        // A fresh guest can't open someone else's story.
+        toast("That story belongs to a different session — start a new one from any character.", "info");
+        router.push("/discover");
+      } else {
+        toast(e?.message || "Something went wrong.", "error");
+        setAuthRequired(true);
+      }
+    } finally {
+      setGuestBusy(false);
+    }
+  }
 
   async function runConfirmed() {
     if (!confirm) return;
@@ -334,23 +355,15 @@ export default function ChatPage() {
 
   return (
     <AppShell>
-      {authRequired && (
-        <div className="fixed inset-0 z-50 bg-bg/90 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="card p-8 max-w-sm w-full text-center">
-            <div className="text-5xl mb-4">🔒</div>
-            <h2 className="font-display text-xl font-bold mb-2">Sign in to continue</h2>
-            <p className="text-text-dim text-sm mb-6">
-              Your story is waiting — sign in to keep chatting.
-            </p>
-            <button
-              className="btn-primary w-full"
-              onClick={() => router.push("/auth")}
-            >
-              Sign in
-            </button>
-          </div>
-        </div>
-      )}
+      <AuthChoiceDialog
+        open={authRequired}
+        busy={guestBusy}
+        title="Sign in to continue"
+        description="Your story is waiting. Sign in to pick it up — or continue as a guest and start a fresh adventure."
+        onSignIn={() => router.push("/auth")}
+        onGuest={guestContinue}
+        onClose={() => setAuthRequired(false)}
+      />
       <ConfirmDialog
         open={!!confirm}
         title={confirm?.title || ""}

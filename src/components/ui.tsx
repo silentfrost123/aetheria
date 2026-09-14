@@ -372,6 +372,61 @@ export function ConfirmDialog({
 }
 
 /* ------------------------------------------------------------------ */
+/* Auth choice — sign in or continue as guest (replaces auto-guest)    */
+/* ------------------------------------------------------------------ */
+export function AuthChoiceDialog({
+  open,
+  busy = false,
+  title = "Sign in to continue",
+  description = "Create a free account to save your stories and memories — or jump straight in as a guest.",
+  onSignIn,
+  onGuest,
+  onClose,
+}: {
+  open: boolean;
+  busy?: boolean;
+  title?: string;
+  description?: string;
+  onSignIn: () => void;
+  onGuest: () => void;
+  onClose: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      onClick={busy ? undefined : onClose}
+    >
+      <div className="card w-full max-w-sm p-7 text-center toast-enter" onClick={(e) => e.stopPropagation()}>
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-accent to-accent-pink flex items-center justify-center mb-4 shadow-glow">
+          <Icon name="spark" className="w-7 h-7 text-white" />
+        </div>
+        <h3 className="font-display text-xl font-bold tracking-tight">{title}</h3>
+        <p className="text-sm text-text-dim mt-2 leading-relaxed">{description}</p>
+        <div className="flex flex-col gap-2.5 mt-6">
+          <button className="btn-primary w-full" onClick={onSignIn} disabled={busy}>
+            Sign in / Create account
+          </button>
+          <button className="btn-ghost w-full" onClick={onGuest} disabled={busy}>
+            {busy ? "Preparing your guest pass…" : "Continue as guest"}
+          </button>
+        </div>
+        <button
+          className="mt-4 text-xs text-text-faint hover:text-text transition-colors"
+          onClick={onClose}
+          disabled={busy}
+        >
+          Maybe later — keep browsing
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Count formatter                                                     */
 /* ------------------------------------------------------------------ */
 export function formatCount(n?: number): string {
