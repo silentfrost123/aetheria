@@ -9,7 +9,7 @@ import { CharacterCard, CharacterCardData } from "@/components/cards";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { Icon } from "@/components/icons";
-import { AuthChoiceDialog, ConfirmDialog, useToast } from "@/components/ui";
+import { AuthChoiceDialog, useToast } from "@/components/ui";
 
 interface CharacterFull {
   id: string;
@@ -44,9 +44,6 @@ export default function CharacterProfile() {
   const [faved, setFaved] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [favCount, setFavCount] = useState(0);
-  const [isOwner, setIsOwner] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [authChoice, setAuthChoice] = useState(false);
   const [guestBusy, setGuestBusy] = useState(false);
@@ -62,7 +59,6 @@ export default function CharacterProfile() {
         setChar(d.character);
         setLiked(!!d.viewer?.liked);
         setFaved(!!d.viewer?.favorited);
-        setIsOwner(!!d.viewer?.isOwner);
         setLikeCount(d.character.stats?.likes || 0);
         setFavCount(d.character.stats?.favorites || 0);
       })
@@ -93,8 +89,7 @@ export default function CharacterProfile() {
     }
   }
 
-  async function toggleFav() {
-    if (!char) return;
+  async function toggleFav() {    if (!char) return;
     if (!user) {
       router.push("/auth");
       return;
@@ -113,19 +108,6 @@ export default function CharacterProfile() {
       setFaved(!next);
       setFavCount((c) => Math.max(0, c + (next ? -1 : 1)));
       toast(e?.message || "Couldn't update favorite.", "error");
-    }
-  }
-
-  async function doDelete() {
-    if (!char) return;
-    setDeleting(true);
-    try {
-      await apiFetch(`/api/characters/${char.id}`, { method: "DELETE" });
-      toast("Character deleted.", "success");
-      router.push("/library");
-    } catch (e: any) {
-      toast(e?.message || "Couldn't delete character.", "error");
-      setDeleting(false);
     }
   }
 
@@ -227,22 +209,6 @@ export default function CharacterProfile() {
                   <Icon name={faved ? "heartFilled" : "heart"} className="w-4 h-4 text-accent-pink" />
                   {faved ? "Favorited" : "Favorite"} · {favCount.toLocaleString()}
                 </button>
-                {isOwner && (
-                  <>
-                    <button
-                      onClick={() => router.push(`/create?remix=${char.id}`)}
-                      className="btn-ghost flex items-center gap-2"
-                    >
-                      <Icon name="create" className="w-4 h-4" /> Edit
-                    </button>
-                    <button
-                      onClick={() => setConfirmDelete(true)}
-                      className="btn-ghost flex items-center gap-2 text-danger"
-                    >
-                      <Icon name="trash" className="w-4 h-4" /> Delete
-                    </button>
-                  </>
-                )}
                 <button
                   onClick={() => {
                     navigator.clipboard?.writeText(window.location.href);
@@ -356,17 +322,6 @@ export default function CharacterProfile() {
             </div>
           </div>
         )}
-
-        <ConfirmDialog
-          open={confirmDelete}
-          busy={deleting}
-          title={`Delete ${char?.name || "this character"}?`}
-          description="This permanently removes the character, its lore, and any likes or favorites. This can't be undone."
-          confirmLabel="Delete"
-          danger
-          onConfirm={doDelete}
-          onClose={() => setConfirmDelete(false)}
-        />
 
         <AuthChoiceDialog
           open={authChoice}

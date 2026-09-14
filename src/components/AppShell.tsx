@@ -13,11 +13,11 @@ const PRIMARY_NAV: NavItem[] = [
   { href: "/", label: "Home", icon: "home" },
   { href: "/discover", label: "Discover", icon: "discover" },
   { href: "/chats", label: "Chats", icon: "chat" },
+  { href: "/my-characters", label: "My characters", icon: "characters" },
 ];
 
 const SECONDARY_NAV: NavItem[] = [
   { href: "/points", label: "Points", icon: "coins" },
-  { href: "/library", label: "Library", icon: "library" },
   { href: "/following", label: "Following", icon: "following" },
   { href: "/notifications", label: "Notifications", icon: "bell" },
   { href: "/profile", label: "Profile", icon: "profile" },
