@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { Icon } from "@/components/icons";
 import { AuthGate } from "@/components/ui";
+import { ImageUpload } from "@/components/ImageUpload";
 
 type Mode = "hub" | "character" | "world" | "story";
 
@@ -187,8 +188,11 @@ function WorldForm({ onBack }: { onBack: () => void }) {
           <textarea className="input" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What makes this world worth exploring?" />
         </div>
         <div>
-          <label className="label">Artwork URL (optional)</label>
+          <label className="label">Artwork (optional) — paste a URL or attach a file</label>
           <input className="input" value={artwork} onChange={(e) => setArtwork(e.target.value)} placeholder="/avatars/… or https://…" />
+          <div className="mt-2">
+            <ImageUpload value={artwork} onChange={setArtwork} />
+          </div>
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <button onClick={onBack} className="btn-ghost">Cancel</button>
@@ -559,8 +563,11 @@ function CharacterWizard({ remixId, onBack }: { remixId: string | null; onBack: 
               <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Character name" />
             </div>
             <div>
-              <label className="label">Avatar URL (optional)</label>
+              <label className="label">Avatar (optional) — paste a URL or attach a file</label>
               <input className="input" value={avatar} onChange={(e) => setAvatar(e.target.value)} placeholder="/avatars/… or https://…" />
+              <div className="mt-2">
+                <ImageUpload value={avatar} onChange={setAvatar} />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><label className="label">Species</label><input className="input" value={species} onChange={(e) => setSpecies(e.target.value)} placeholder="Human, Vampire…" /></div>

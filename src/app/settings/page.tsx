@@ -49,7 +49,6 @@ export default function SettingsPage() {
   const [useLorebook, setUseLorebook] = useState<boolean>(s.useLorebook !== false);
   const [autoSummary, setAutoSummary] = useState<boolean>(s.autoSummary !== false);
   const [aiSuggestions, setAiSuggestions] = useState<boolean>(s.aiSuggestions !== false);
-  const [autoImageGen, setAutoImageGen] = useState<boolean>(s.autoImageGen === true);
   const [fontScale, setFontScale] = useState<string>(s.fontScale || "md");
   const [reduceMotion, setReduceMotion] = useState<boolean>(s.reduceMotion === true);
   const [emailNotif, setEmailNotif] = useState<boolean>(s.emailNotifications !== false);
@@ -70,14 +69,13 @@ export default function SettingsPage() {
       useLorebook !== (s.useLorebook !== false) ||
       autoSummary !== (s.autoSummary !== false) ||
       aiSuggestions !== (s.aiSuggestions !== false) ||
-      autoImageGen !== (s.autoImageGen === true) ||
       fontScale !== (s.fontScale || "md") ||
       reduceMotion !== (s.reduceMotion === true) ||
       emailNotif !== (s.emailNotifications !== false) ||
       followerNotif !== (s.newFollowerNotifications !== false) ||
       replyNotif !== (s.replyNotifications !== false)
     );
-  }, [s, responseLength, narration, creativity, model, useMemory, useLorebook, autoSummary, aiSuggestions, autoImageGen, fontScale, reduceMotion, emailNotif, followerNotif, replyNotif]);
+  }, [s, responseLength, narration, creativity, model, useMemory, useLorebook, autoSummary, aiSuggestions, fontScale, reduceMotion, emailNotif, followerNotif, replyNotif]);
 
   async function save() {
     setSaving(true);
@@ -90,7 +88,6 @@ export default function SettingsPage() {
       useLorebook,
       autoSummary,
       aiSuggestions,
-      autoImageGen,
       fontScale,
       reduceMotion,
       emailNotifications: emailNotif,
@@ -215,12 +212,21 @@ export default function SettingsPage() {
                 label="Suggested replies"
                 description="Offer optional reply suggestions while you chat."
               />
-              <Toggle
-                checked={autoImageGen}
-                onChange={setAutoImageGen}
-                label="Auto image generation"
-                description="Illustrate key scenes automatically (experimental)."
-              />
+              <div className="flex items-start justify-between gap-4 opacity-60">
+                <div>
+                  <div className="text-sm font-medium flex items-center gap-2">
+                    Auto image generation
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 border border-border-soft text-text-faint font-normal normal-case tracking-normal">
+                      Not available yet
+                    </span>
+                  </div>
+                  <p className="text-xs text-text-faint mt-0.5">
+                    Illustrate key scenes automatically — this feature isn&apos;t available at the
+                    moment.
+                  </p>
+                </div>
+                <div className="w-9 h-5 rounded-full bg-bg-hover border border-border-soft mt-1 shrink-0" />
+              </div>
             </div>
           </div>
         )}

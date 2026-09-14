@@ -59,7 +59,7 @@ export function createConversation(input: {
     model: userSettings.defaultModel || undefined,
     useMemory: userSettings.useMemory !== false,
     useLorebook: userSettings.useLorebook !== false,
-    autoImageGen: userSettings.autoImageGen === true,
+    autoImageGen: false, // AI image generation is not available yet — kept off regardless of stored settings
     autoSummary: userSettings.autoSummary !== false,
     aiSuggestions: userSettings.aiSuggestions !== false,
     ...input.settings,
