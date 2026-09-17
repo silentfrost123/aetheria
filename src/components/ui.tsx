@@ -203,7 +203,7 @@ export function ErrorState({ onRetry }: { onRetry?: () => void }) {
       </div>
       <h3 className="font-display text-lg font-bold text-text">Something went wrong.</h3>
       <p className="text-sm text-text-dim mt-1.5 max-w-sm">
-        We couldn&apos;t load this part of Aetheria.
+        We couldn&apos;t load this part of Chatworld.
       </p>
       {onRetry && (
         <button onClick={onRetry} className="btn-ghost mt-5 inline-flex items-center gap-2">
@@ -218,7 +218,7 @@ export function ErrorState({ onRetry }: { onRetry?: () => void }) {
 /* Auth-gate panel (polished "join us" prompt)                         */
 /* ------------------------------------------------------------------ */
 export function AuthGate({
-  title = "Join Aetheria",
+  title = "Join Chatworld",
   description = "Create characters, build worlds, save your adventures, and continue where you left off.",
 }: {
   title?: string;

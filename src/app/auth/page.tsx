@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Icon } from "@/components/icons";
 
 export default function AuthPage() {
+  usePageMeta("Sign in", 'Sign in or create your Chatworld account.');
   const { login, register } = useAuth();
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -49,7 +51,7 @@ export default function AuthPage() {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent-pink flex items-center justify-center">
             <Icon name="spark" className="w-5 h-5 text-white" />
           </div>
-          <span className="font-display text-2xl font-bold">Aetheria</span>
+          <span className="font-display text-2xl font-bold">Chatworld</span>
         </div>
         <div className="card p-8">
           <h1 className="font-display text-2xl font-bold mb-1">

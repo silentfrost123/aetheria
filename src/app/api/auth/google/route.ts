@@ -5,7 +5,7 @@ import { json } from "@/server/http";
 
 export const runtime = "nodejs";
 
-const STATE_COOKIE = "aetheria_oauth_state";
+const STATE_COOKIE = "chatworld_oauth_state";
 
 /**
  * Start the Google sign-in flow: redirect the browser to Google's consent

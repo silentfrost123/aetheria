@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppShell, PageHeader } from "@/components/AppShell";
@@ -9,6 +10,7 @@ import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 export default function ChatsPage() {
+  usePageMeta("Your chats", 'Continue your ongoing AI character stories.');
   const { user } = useAuth();
   const router = useRouter();
   const [convs, setConvs] = useState<any[]>([]);

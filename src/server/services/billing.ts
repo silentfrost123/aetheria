@@ -207,13 +207,13 @@ export async function createCheckout(
     itemRow = db.prepare("SELECT * FROM credit_packages WHERE id = ? AND active = 1").get(req.refId) as any;
     if (!itemRow) throw new BillingError("Unknown credit package.", 404);
     amountCents = itemRow.price_cents;
-    itemName = `${itemRow.credits} Aetheria points`;
+    itemName = `${itemRow.credits} Chatworld points`;
   } else {
     itemRow = db.prepare("SELECT * FROM plans WHERE id = ? AND active = 1").get(req.refId) as any;
     if (!itemRow) throw new BillingError("Unknown plan.", 404);
     if (itemRow.price_cents === 0) throw new BillingError("The free plan doesn't need a purchase.", 400);
     amountCents = itemRow.price_cents;
-    itemName = `Aetheria ${itemRow.name} (monthly)`;
+    itemName = `Chatworld ${itemRow.name} (monthly)`;
   }
 
   const paymentId = newId("pay");
@@ -339,7 +339,7 @@ async function createStripeSession(
   const priceId = await ensureStripePrice(
     table,
     itemRow.id,
-    kind === "credits" ? `Aetheria ${itemRow.credits} Points` : `Aetheria ${itemRow.name}`,
+    kind === "credits" ? `Chatworld ${itemRow.credits} Points` : `Chatworld ${itemRow.name}`,
     amountCents,
     kind === "subscription"
   );

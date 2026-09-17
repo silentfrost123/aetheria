@@ -13,7 +13,7 @@ export interface ApiUser {
   settings: any;
 }
 
-const TOKEN_KEY = "aetheria_token";
+const TOKEN_KEY = "chatworld_token";
 
 // In-memory token store. This is the *primary* source of truth so that
 // authentication works even in sandboxed/embedded iframes where localStorage

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
@@ -97,6 +98,7 @@ export default function ChatPage() {
   const router = useRouter();
   const [outOfPoints, setOutOfPoints] = useState(false);
   const [data, setData] = useState<ChatData | null>(null);
+  usePageMeta(data ? `${data.conversation.character?.name || "Story"} — Chatworld` : "Story chat", "Your interactive story, live.");
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");

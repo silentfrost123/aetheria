@@ -30,7 +30,7 @@ export function providerInfo(): {
   return {
     id: p.id,
     isRemote: !!config?.apiKey,
-    model: config?.defaultModel || "aetheria/offline-engine",
+    model: config?.defaultModel || "chatworld/offline-engine",
   };
 }
 

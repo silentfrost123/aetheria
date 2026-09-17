@@ -1,9 +1,11 @@
 "use client";
 
 import { AppShell } from "@/components/AppShell";
+import { usePageMeta } from "@/lib/page-meta";
 import { EmptyState } from "@/components/ui";
 
 export default function NotificationsPage() {
+  usePageMeta("Notifications", 'Your Chatworld notifications.');
   return (
     <AppShell>
       <div className="max-w-3xl mx-auto px-4 md:px-8 py-8">

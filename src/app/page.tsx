@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
@@ -42,6 +43,7 @@ interface HomeData {
 }
 
 export default function Home() {
+  usePageMeta("Chatworld — Enter a world that remembers you", 'AI character roleplay & interactive storytelling. Create characters, build worlds, and live stories that remember you.');
   const { user, loading, updateSettings } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -65,7 +67,7 @@ export default function Home() {
       toast(
         genres.length
           ? "Your worlds await — recommendations tuned to your taste."
-          : "Welcome to Aetheria.",
+          : "Welcome to Chatworld.",
         "success"
       );
       setReload((r) => r + 1);
@@ -154,7 +156,7 @@ export default function Home() {
                 Which worlds call to you?
               </h2>
               <p className="text-sm text-text-dim mt-2 max-w-lg leading-relaxed">
-                Choose a few genres and Aetheria will guide you to characters and stories
+                Choose a few genres and Chatworld will guide you to characters and stories
                 worth losing sleep over. You can change this anytime in Settings.
               </p>
               <div className="flex flex-wrap gap-2 mt-5">
@@ -176,7 +178,7 @@ export default function Home() {
                   disabled={savingOnboard}
                   onClick={() => finishOnboarding(picked)}
                 >
-                  {savingOnboard ? "Preparing…" : "Enter Aetheria"}
+                  {savingOnboard ? "Preparing…" : "Enter Chatworld"}
                 </button>
                 <button
                   className="btn-ghost"

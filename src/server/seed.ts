@@ -1,5 +1,5 @@
 /**
- * Seed data for Aetheria: a demo user, sample characters, a world, and lore.
+ * Seed data for Chatworld: a demo user, sample characters, a world, and lore.
  * Exposes `seedIfEmpty()` (used automatically on first boot) and `seedReset()`
  * (used by the CLI seed script to rebuild from scratch).
  */
@@ -141,7 +141,7 @@ function seedPoints(uid: string) {
     "INSERT INTO point_transactions (id, user_id, amount, kind, note, created_at) VALUES (?, ?, ?, 'admin', ?, ?)"
   ).run(id("ptx"), uid, 1000, "Welcome bonus", nowIso());
   db.prepare(
-    "INSERT INTO point_codes (id, code, amount, created_at) VALUES (?, 'AETHERIA100', 500, ?), (?, 'WELCOME500', 500, ?)"
+    "INSERT INTO point_codes (id, code, amount, created_at) VALUES (?, 'CHATWORLD100', 500, ?), (?, 'WELCOME500', 500, ?)"
   ).run(id("pcd"), nowIso(), id("pcd"), nowIso());
 }
 

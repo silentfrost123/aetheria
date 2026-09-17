@@ -6,13 +6,13 @@ import { newId, safeParse } from "./util";
 import { grantStarterPoints } from "./services/points";
 import type { User } from "@/lib/types";
 
-const SESSION_COOKIE = "aetheria_session";
+const SESSION_COOKIE = "chatworld_session";
 export const SESSION_COOKIE_NAME = SESSION_COOKIE;
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 
 // A dummy bcrypt hash used to equalize login timing for unknown emails,
 // preventing a timing side-channel that would allow account enumeration.
-export const DUMMY_HASH = bcrypt.hashSync("aetheria-timing-equalizer", 12);
+export const DUMMY_HASH = bcrypt.hashSync("chatworld-timing-equalizer", 12);
 
 // Emails that are treated as site administrators. Comma-separated.
 //

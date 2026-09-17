@@ -19,7 +19,7 @@ export class OfflineProvider implements ModelProvider {
     const text = this.compose(input);
     return {
       text,
-      model: "aetheria/offline-engine",
+      model: "chatworld/offline-engine",
       inputTokens: countTokens(JSON.stringify(input.messages)),
       outputTokens: countTokens(text),
       latencyMs: Date.now() - started,
@@ -41,7 +41,7 @@ export class OfflineProvider implements ModelProvider {
     }
     return {
       text: acc,
-      model: "aetheria/offline-engine",
+      model: "chatworld/offline-engine",
       inputTokens: countTokens(JSON.stringify(input.messages)),
       outputTokens: countTokens(text),
       latencyMs: 0,

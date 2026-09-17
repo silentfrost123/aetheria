@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { CharacterCard, CharacterCardData, FeaturedCard } from "@/components/cards";
@@ -17,6 +18,7 @@ const GENRES = [
 ];
 
 export default function CharactersPage() {
+  usePageMeta("Characters", 'Browse every character created by the Chatworld community.');
   const [chars, setChars] = useState<CharacterCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);

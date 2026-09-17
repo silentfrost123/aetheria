@@ -142,7 +142,7 @@ export function grantStarterPoints(userId: string): number {
       userId,
       STARTING_POINTS,
       "starter",
-      "Welcome to Aetheria — your story begins."
+      "Welcome to Chatworld — your story begins."
     );
   });
   return tx();

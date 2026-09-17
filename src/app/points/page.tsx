@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
@@ -54,6 +55,7 @@ function fmtDate(iso: string): string {
 }
 
 export default function PointsPage() {
+  usePageMeta("Points", 'Manage your points, plans and credit packs.');
   const { user } = useAuth();
   const { balance, canClaim, streak, config, claimDaily, redeem, refresh } = usePoints();
   const router = useRouter();
@@ -160,7 +162,7 @@ export default function PointsPage() {
       <AppShell>
         <div className="max-w-2xl mx-auto px-4 md:px-8 py-10">
           <AuthGate
-            title="Join Aetheria for points"
+            title="Join Chatworld for points"
             description="Earn 500 free points every day to chat with characters, and buy more when you run out."
           />
         </div>

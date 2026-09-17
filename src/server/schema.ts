@@ -1,4 +1,4 @@
-// Database schema migrations for Aetheria.
+// Database schema migrations for Chatworld.
 // Each entry is applied in order and recorded in _migrations.
 
 export interface Migration {

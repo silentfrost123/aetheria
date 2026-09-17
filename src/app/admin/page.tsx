@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import { useRouter } from "next/navigation";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
@@ -45,6 +46,7 @@ interface AuditRow {
 }
 
 export default function AdminPage() {
+  usePageMeta("Admin", 'Chatworld administration.');
   const { user, loading } = useAuth();
   const router = useRouter();
 

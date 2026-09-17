@@ -13,7 +13,7 @@ import {
 
 export const runtime = "nodejs";
 
-const STATE_COOKIE = "aetheria_oauth_state";
+const STATE_COOKIE = "chatworld_oauth_state";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);

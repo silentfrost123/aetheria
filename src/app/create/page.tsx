@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { Icon } from "@/components/icons";
-import { AuthGate } from "@/components/ui";
+import { AuthGate, useToast } from "@/components/ui";
 import { ImageUpload } from "@/components/ImageUpload";
 
 type Mode = "hub" | "character" | "world" | "story";
@@ -112,6 +113,7 @@ function Hub({ onPick }: { onPick: (m: Mode) => void }) {
 /* World form                                                         */
 /* ================================================================== */
 function WorldForm({ onBack }: { onBack: () => void }) {
+  const { toast } = useToast();
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -148,9 +150,10 @@ function WorldForm({ onBack }: { onBack: () => void }) {
         method: "POST",
         body: JSON.stringify({ name: name.trim(), description, genre, artwork, isPublic: true }),
       });
+      toast("World published", "success");
       router.push(`/worlds/${d.world.id}`);
     } catch (e: any) {
-      alert(e.message || "Save failed.");
+      toast(e.message || "Save failed.", "error");
       setSaving(false);
     }
   }
@@ -209,6 +212,7 @@ function WorldForm({ onBack }: { onBack: () => void }) {
 /* Story form (creates a story-mode character)                         */
 /* ================================================================== */
 function StoryForm({ onBack }: { onBack: () => void }) {
+  const { toast } = useToast();
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [genre, setGenre] = useState("Dark Fantasy");
@@ -271,9 +275,10 @@ function StoryForm({ onBack }: { onBack: () => void }) {
         method: "POST",
         body: JSON.stringify(payload),
       });
+      toast("Story published", "success");
       router.push(`/characters/${d.character.id}`);
     } catch (e: any) {
-      alert(e.message || "Save failed.");
+      toast(e.message || "Save failed.", "error");
       setSaving(false);
     }
   }
@@ -414,6 +419,7 @@ const PERSONALITY_TRAITS = [
 const GENDER_STOPS = ["Male", "Non-binary", "Female"];
 
 function CharacterWizard({ remixId, onBack }: { remixId: string | null; onBack: () => void }) {
+  const { toast } = useToast();
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
@@ -511,16 +517,18 @@ function CharacterWizard({ remixId, onBack }: { remixId: string | null; onBack: 
       };
       if (remixId) {
         await apiFetch(`/api/characters/${remixId}`, { method: "PUT", body: JSON.stringify(payload) });
+        toast("Character saved", "success");
         router.push(`/characters/${remixId}`);
       } else {
         const d = await apiFetch<{ character: { id: string } }>("/api/characters", {
           method: "POST",
           body: JSON.stringify(payload),
         });
+        toast("Character published", "success");
         router.push(`/characters/${d.character.id}`);
       }
     } catch (e: any) {
-      alert(e.message || "Save failed.");
+      toast(e.message || "Save failed.", "error");
     } finally {
       setSaving(false);
     }
@@ -729,6 +737,7 @@ function CharacterWizard({ remixId, onBack }: { remixId: string | null; onBack: 
 /* Page                                                               */
 /* ================================================================== */
 export default function CreatePage() {
+  usePageMeta("Create", 'Create AI characters, worlds and scenarios on Chatworld.');
   const router = useRouter();
   const { user } = useAuth();
   const [mode, setMode] = useState<Mode>("hub");
@@ -757,7 +766,7 @@ export default function CreatePage() {
             <Icon name="chevronLeft" className="w-4 h-4" /> Back
           </button>
           <AuthGate
-            title="Join Aetheria to create"
+            title="Join Chatworld to create"
             description="Create characters, build worlds, and write stories — then share them with a community that's waiting to step inside."
           />
         </div>

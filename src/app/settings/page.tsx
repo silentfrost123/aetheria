@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
@@ -36,6 +37,7 @@ const MODEL_SUGGESTIONS = [
 ];
 
 export default function SettingsPage() {
+  usePageMeta("Settings", 'Tune your Chatworld experience.');
   const { user, updateSettings, deleteAccount, logout } = useAuth();
   const router = useRouter();
   const s = user?.settings || {};

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { StoryCard, StoryCardData, FeaturedCard } from "@/components/cards";
@@ -14,6 +15,7 @@ interface StoriesData {
 }
 
 export default function StoriesPage() {
+  usePageMeta("Stories", 'Interactive stories from the Chatworld community.');
   const [stories, setStories] = useState<StoryCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);

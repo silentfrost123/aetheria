@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppShell, PageHeader } from "@/components/AppShell";
@@ -10,6 +11,7 @@ import { useAuth } from "@/lib/auth-context";
 import { ConfirmDialog, useToast } from "@/components/ui";
 
 export default function MyCharactersPage() {
+  usePageMeta("My characters", "Every character you've made — edit or delete them here.");
   const { user } = useAuth();
   const router = useRouter();
   const [chars, setChars] = useState<CharacterCardData[]>([]);

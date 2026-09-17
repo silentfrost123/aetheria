@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
@@ -13,6 +14,7 @@ export default function WorldProfile() {
   const router = useRouter();
   const { user } = useAuth();
   const [world, setWorld] = useState<any>(null);
+  usePageMeta(world ? `${world.name} — Chatworld` : "World", "Locations, lore and factions of a persistent world.");
   const [lore, setLore] = useState<any[]>([]);
   const [entering, setEntering] = useState(false);
 

@@ -1,4 +1,4 @@
-// Shared type definitions for Aetheria
+// Shared type definitions for Chatworld
 
 export type ID = string;
 

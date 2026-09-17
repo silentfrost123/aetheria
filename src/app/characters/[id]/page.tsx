@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
@@ -37,6 +38,7 @@ export default function CharacterProfile() {
   const router = useRouter();
   const { user } = useAuth();
   const [char, setChar] = useState<CharacterFull | null>(null);
+  usePageMeta(char ? `${char.name} — Chatworld` : "Character profile", "Meet your next story's protagonist.");
   const [similar, setSimilar] = useState<CharacterCardData[]>([]);
   const [tab, setTab] = useState<"about" | "personality" | "creator">("about");
   const [starting, setStarting] = useState(false);

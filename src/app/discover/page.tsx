@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import { AppShell } from "@/components/AppShell";
 import {
   CharacterCard,
@@ -65,7 +66,7 @@ const POPULAR_SEARCHES = [
 /* Recent searches (safe localStorage) */
 function readRecent(): string[] {
   try {
-    const s = localStorage.getItem("aetheria_recent_searches");
+    const s = localStorage.getItem("chatworld_recent_searches");
     return s ? JSON.parse(s) : [];
   } catch {
     return [];
@@ -73,7 +74,7 @@ function readRecent(): string[] {
 }
 function writeRecent(terms: string[]) {
   try {
-    localStorage.setItem("aetheria_recent_searches", JSON.stringify(terms.slice(0, 6)));
+    localStorage.setItem("chatworld_recent_searches", JSON.stringify(terms.slice(0, 6)));
   } catch {
     /* ignore */
   }
@@ -130,7 +131,7 @@ function SearchBar({
           }}
           role="combobox"
           aria-expanded={showSuggestions || showDefaults}
-          aria-label="Search Aetheria"
+          aria-label="Search Chatworld"
         />
         {q && (
           <button
@@ -308,6 +309,7 @@ const GENRES_FULL = [
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
 export default function Discover() {
+  usePageMeta("Discover", 'Browse trending AI characters, worlds and interactive stories on Chatworld.');
   const { user } = useAuth();
   const [data, setData] = useState<DiscoverData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -404,14 +406,14 @@ export default function Discover() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_15%,rgba(139,92,246,0.12),transparent_40%)]" />
           <div className="relative px-5 py-10 md:px-12 md:py-14 max-w-3xl">
             <div className="inline-flex items-center gap-2 text-[11px] font-semibold text-accent-soft bg-accent/10 border border-accent/20 rounded-full px-3 py-1 mb-5">
-              <Icon name="spark" className="w-3.5 h-3.5" /> THE AETHERIA COLLECTION
+              <Icon name="spark" className="w-3.5 h-3.5" /> THE CHATWORLD COLLECTION
             </div>
             <h1 className="font-display text-3xl md:text-5xl font-bold leading-[1.08] tracking-tight">
               Discover your <span className="gradient-text">next world.</span>
             </h1>
             <p className="text-text-dim mt-4 text-sm md:text-base max-w-xl leading-relaxed">
               Meet characters, explore persistent worlds, and step into stories created by the
-              Aetheria community.
+              Chatworld community.
             </p>
             <div className="mt-7 max-w-xl">
               <SearchBar

@@ -61,7 +61,7 @@ async function main() {
     g1.status === 200 && g2.status === 200 && g1.data.user.id !== g2.data.user.id,
     `(${g1.data?.user?.id} vs ${g2.data?.user?.id})`
   );
-  check("guest users are anonymous/throwaway emails", /guest_[a-f0-9]+@guest\.aetheria\.dev/.test(g1.data?.user?.email || ""));
+  check("guest users are anonymous/throwaway emails", /guest_[a-f0-9]+@guest\.chatworld\.dev/.test(g1.data?.user?.email || ""));
 
   // ---- 2. Memories IDOR ---------------------------------------------------
   console.log("2. Memories IDOR (BOLA)");

@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import { useRouter } from "next/navigation";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { Icon } from "@/components/icons";
+import { useToast } from "@/components/ui";
 
 interface Persona {
   id: string;
@@ -19,7 +21,9 @@ interface Persona {
 }
 
 export default function ProfilePage() {
+  usePageMeta("Profile", 'Your profile, personas and creations.');
   const { user, logout } = useAuth();
+  const { toast } = useToast();
   const router = useRouter();
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [editing, setEditing] = useState<Persona | null>(null);
@@ -36,20 +40,30 @@ export default function ProfilePage() {
 
   async function save() {
     if (!form.name?.trim()) return;
-    if (editing) {
-      await apiFetch(`/api/personas/${editing.id}`, { method: "PUT", body: JSON.stringify(form) });
-    } else {
-      await apiFetch("/api/personas", { method: "POST", body: JSON.stringify(form) });
+    try {
+      if (editing) {
+        await apiFetch(`/api/personas/${editing.id}`, { method: "PUT", body: JSON.stringify(form) });
+      } else {
+        await apiFetch("/api/personas", { method: "POST", body: JSON.stringify(form) });
+      }
+      toast("Persona saved", "success");
+      setEditing(null);
+      setCreating(false);
+      setForm({});
+      load();
+    } catch (e: any) {
+      toast(e.message || "Save failed.", "error");
     }
-    setEditing(null);
-    setCreating(false);
-    setForm({});
-    load();
   }
 
   async function remove(id: string) {
-    await apiFetch(`/api/personas/${id}`, { method: "DELETE" });
-    load();
+    try {
+      await apiFetch(`/api/personas/${id}`, { method: "DELETE" });
+      toast("Persona deleted", "success");
+      load();
+    } catch (e: any) {
+      toast(e.message || "Delete failed.", "error");
+    }
   }
 
   if (!user) {

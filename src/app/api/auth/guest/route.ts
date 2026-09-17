@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   }
 
   const stamp = crypto.randomBytes(12).toString("hex");
-  const email = `guest_${stamp}@guest.aetheria.dev`;
+  const email = `guest_${stamp}@guest.chatworld.dev`;
 
   // Generate a username that is very unlikely to collide; the createUser path
   // also guards against a collision (returns a friendly error rather than 500),

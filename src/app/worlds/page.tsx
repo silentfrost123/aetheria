@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { usePageMeta } from "@/lib/page-meta";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { WorldCard, WorldCardData, FeaturedCard } from "@/components/cards";
@@ -15,6 +16,7 @@ const GENRES = [
 ];
 
 export default function WorldsPage() {
+  usePageMeta("Worlds", 'Explore persistent worlds built by the community.');
   const [worlds, setWorlds] = useState<WorldCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
