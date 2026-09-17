@@ -10,29 +10,29 @@ const config: Config = {
     extend: {
       colors: {
         bg: {
-          DEFAULT: "#130E0A",
-          soft: "#1A140F",
-          panel: "#211A14",
-          card: "#262019",
-          hover: "#2E261E",
+          DEFAULT: "#0C0F14",
+          soft: "#11151C",
+          panel: "#161B23",
+          card: "#1A202A",
+          hover: "#222936",
         },
         accent: {
-          DEFAULT: "#D2546A",
-          soft: "#E88497",
-          deep: "#8E3348",
+          DEFAULT: "#E85574",
+          soft: "#F08BA0",
+          deep: "#B03352",
           cyan: "#D9A441",
-          pink: "#F0A0B0",
+          pink: "#F7B8C6",
           amber: "#E8A33D",
           emerald: "#58C08A",
         },
         text: {
-          DEFAULT: "#F2EDE8",
-          dim: "#BCB0A8",
-          faint: "#93887F",
+          DEFAULT: "#EDF1F5",
+          dim: "#A6B0BC",
+          faint: "#8C97A4",
         },
         border: {
-          DEFAULT: "#3A2F26",
-          soft: "#2B231B",
+          DEFAULT: "#2A3240",
+          soft: "#1E2530",
         },
         danger: "#FF6B57",
         success: "#58C08A",
@@ -43,19 +43,19 @@ const config: Config = {
         serif: ["Georgia", "serif"],
       },
       boxShadow: {
-        glow: "0 0 40px -10px rgba(210, 84, 106, 0.4)",
-        "glow-sm": "0 0 20px -6px rgba(210, 84, 106, 0.4)",
+        glow: "0 0 40px -10px rgba(232, 85, 116, 0.4)",
+        "glow-sm": "0 0 20px -6px rgba(232, 85, 116, 0.4)",
         card: "0 8px 30px -12px rgba(0,0,0,0.6)",
         "card-hover": "0 20px 50px -20px rgba(0,0,0,0.85)",
         inner: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
       },
       backgroundImage: {
         "hero-gradient":
-          "radial-gradient(ellipse at 18% 0%, rgba(210, 84, 106,0.28), transparent 52%), radial-gradient(ellipse at 82% 18%, rgba(217, 164, 65,0.16), transparent 46%), radial-gradient(ellipse at 50% 120%, rgba(240, 160, 176,0.10), transparent 50%)",
+          "radial-gradient(ellipse at 18% 0%, rgba(232, 85, 116,0.28), transparent 52%), radial-gradient(ellipse at 82% 18%, rgba(217, 164, 65,0.16), transparent 46%), radial-gradient(ellipse at 50% 120%, rgba(247, 184, 198,0.10), transparent 50%)",
         "card-gradient":
           "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 40%)",
         "aurora":
-          "radial-gradient(ellipse at 20% 20%, rgba(210, 84, 106,0.12), transparent 50%), radial-gradient(ellipse at 80% 0%, rgba(217, 164, 65,0.08), transparent 45%)",
+          "radial-gradient(ellipse at 20% 20%, rgba(232, 85, 116,0.12), transparent 50%), radial-gradient(ellipse at 80% 0%, rgba(217, 164, 65,0.08), transparent 45%)",
       },
       keyframes: {
         shimmer: {

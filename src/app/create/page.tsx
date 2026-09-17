@@ -602,7 +602,7 @@ function CharacterWizard({ remixId, onBack }: { remixId: string | null; onBack: 
                     step={1}
                     value={GENDER_STOPS.indexOf(gender) >= 0 ? GENDER_STOPS.indexOf(gender) : 1}
                     onChange={(e) => setGender(GENDER_STOPS[Number(e.target.value)])}
-                    className="w-full accent-[#E88497] cursor-pointer"
+                    className="w-full accent-[#F08BA0] cursor-pointer"
                     aria-label="Gender"
                   />
                   <div className="flex justify-between text-[10px] text-text-faint mt-1">

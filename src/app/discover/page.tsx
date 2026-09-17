@@ -403,7 +403,7 @@ export default function Discover() {
         {/* ================= Hero ================= */}
         <section className="relative overflow-hidden rounded-3xl border border-border bg-bg-soft mt-6">
           <div className="absolute inset-0 bg-hero-gradient" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_15%,rgba(210, 84, 106,0.12),transparent_40%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_15%,rgba(232, 85, 116,0.12),transparent_40%)]" />
           <div className="relative px-5 py-10 md:px-12 md:py-14 max-w-3xl">
             <div className="inline-flex items-center gap-2 text-[11px] font-semibold text-accent-soft bg-accent/10 border border-accent/20 rounded-full px-3 py-1 mb-5">
               <Icon name="spark" className="w-3.5 h-3.5" /> THE CHATWORLD COLLECTION
