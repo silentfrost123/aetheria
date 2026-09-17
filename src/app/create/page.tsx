@@ -40,7 +40,7 @@ function Hub({ onPick }: { onPick: (m: Mode) => void }) {
         "Design a living personality — voice, memories, moods, and the secrets they keep.",
       examples: "A vampire queen · a street fixer · a knight of the Veil",
       cta: "Create a character",
-      gradient: "from-violet-600/80 to-fuchsia-700/60",
+      gradient: "from-rose-700/80 to-red-900/60",
     },
     {
       mode: "world",
@@ -602,7 +602,7 @@ function CharacterWizard({ remixId, onBack }: { remixId: string | null; onBack: 
                     step={1}
                     value={GENDER_STOPS.indexOf(gender) >= 0 ? GENDER_STOPS.indexOf(gender) : 1}
                     onChange={(e) => setGender(GENDER_STOPS[Number(e.target.value)])}
-                    className="w-full accent-[#a78bfa] cursor-pointer"
+                    className="w-full accent-[#E88497] cursor-pointer"
                     aria-label="Gender"
                   />
                   <div className="flex justify-between text-[10px] text-text-faint mt-1">

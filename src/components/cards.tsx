@@ -45,7 +45,7 @@ export interface StoryCardData {
 /* Type badge (Character / World / Story)                              */
 /* ------------------------------------------------------------------ */
 const TYPE_STYLES: Record<string, { label: string; cls: string; icon: string }> = {
-  character: { label: "Character", cls: "bg-violet-500/85 text-white", icon: "characters" },
+  character: { label: "Character", cls: "bg-rose-700/85 text-white", icon: "characters" },
   world: { label: "World", cls: "bg-cyan-500/85 text-white", icon: "globe" },
   story: { label: "Story", cls: "bg-rose-500/85 text-white", icon: "book" },
 };

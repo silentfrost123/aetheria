@@ -1,11 +1,11 @@
 "use client";
 
 const GRADIENTS = [
-  "from-violet-600 to-fuchsia-600",
-  "from-cyan-500 to-blue-600",
-  "from-rose-500 to-amber-500",
-  "from-emerald-500 to-teal-600",
-  "from-indigo-500 to-violet-600",
+  "from-rose-700 to-red-900",
+  "from-amber-600 to-orange-800",
+  "from-rose-500 to-amber-600",
+  "from-red-800 to-stone-900",
+  "from-pink-700 to-rose-900",
 ];
 
 function hashCode(s: string) {
