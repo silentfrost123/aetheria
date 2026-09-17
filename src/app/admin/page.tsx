@@ -153,6 +153,23 @@ export default function AdminPage() {
     }
   }
 
+  async function installShowcase() {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await apiFetch<{ added: number; skipped: string[] }>("/api/admin/showcase", {
+        method: "POST",
+      });
+      setNotice(`Showcase pack: ${res.added} added, ${res.skipped.length} already present.`);
+      await loadStats();
+    } catch (e: any) {
+      setError(e?.message || "Failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const statCards: { label: string; value: string; icon: string }[] = stats
     ? [
         { label: "Users", value: formatCount(stats.users), icon: "users" },
@@ -269,6 +286,19 @@ export default function AdminPage() {
                   </div>
                 </div>
               )}
+            </section>
+
+            <section className="card p-5">
+              <h2 className="font-display font-bold mb-1">Showcase character pack</h2>
+              <p className="text-xs text-text-faint mb-3">
+                Installs five ready-made showcase characters — a tsundere school queen, a tavern
+                adventurer, a betrothed noble lady, a cold council president, and a crime-family
+                heiress — each with generated artwork. Safe to run any time; existing characters are
+                skipped.
+              </p>
+              <button className="btn-primary" onClick={installShowcase} disabled={busy}>
+                Install showcase characters
+              </button>
             </section>
 
             <section className="card p-5">
