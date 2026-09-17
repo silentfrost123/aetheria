@@ -421,6 +421,12 @@ export function AuthChoiceDialog({
         >
           Maybe later — keep browsing
         </button>
+        <p className="mt-3 text-[11px] leading-relaxed text-text-faint">
+          By continuing you agree to our{" "}
+          <Link href="/legal/terms" className="text-text-dim hover:text-text underline underline-offset-2">Terms</Link>{" "}
+          and{" "}
+          <Link href="/legal/privacy" className="text-text-dim hover:text-text underline underline-offset-2">Privacy Policy</Link>.
+        </p>
       </div>
     </div>
   );

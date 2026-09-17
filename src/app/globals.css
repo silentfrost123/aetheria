@@ -489,3 +489,26 @@ input[type="range"] {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ---- Accessibility ---- */
+:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
+}
+
+/* ---- Legal pages ---- */
+.prose-legal a {
+  color: #a78bfa;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-legal a:hover {
+  color: #c4b5fd;
+}
+.prose-legal strong {
+  color: #ececf4;
+  font-weight: 600;
+}
+.prose-legal ul {
+  list-style: disc;
+}

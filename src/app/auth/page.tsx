@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePageMeta } from "@/lib/page-meta";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Icon } from "@/components/icons";
@@ -22,12 +23,17 @@ export default function AuthPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [age, setAge] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (mode === "register" && (!age || !agreed)) {
+      setError("Please confirm your age and accept the Terms & Privacy Policy to continue.");
+      return;
+    }
     setBusy(true);
     try {
       if (mode === "login") {
@@ -79,10 +85,20 @@ export default function AuthPage() {
               <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={8} />
             </div>
             {mode === "register" && (
-              <label className="flex items-center gap-2 text-sm text-text-dim">
-                <input type="checkbox" checked={age} onChange={(e) => setAge(e.target.checked)} className="accent-accent" />
-                I am 18 or older
-              </label>
+              <>
+                <label className="flex items-start gap-2 text-sm text-text-dim">
+                  <input type="checkbox" checked={age} onChange={(e) => setAge(e.target.checked)} className="accent-accent mt-0.5" required />
+                  <span>I am at least 13 years old. Users aged 13–17 need a parent or guardian&rsquo;s permission.</span>
+                </label>
+                <label className="flex items-start gap-2 text-sm text-text-dim">
+                  <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="accent-accent mt-0.5" required />
+                  <span>
+                    I agree to the{" "}
+                    <Link href="/legal/terms" className="text-accent-soft hover:underline">Terms of Service</Link> and{" "}
+                    <Link href="/legal/privacy" className="text-accent-soft hover:underline">Privacy Policy</Link>.
+                  </span>
+                </label>
+              </>
             )}
             {error && <div className="text-sm text-danger">{error}</div>}
             <button type="submit" disabled={busy} className="btn-primary w-full">

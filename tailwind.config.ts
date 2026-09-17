@@ -28,7 +28,7 @@ const config: Config = {
         text: {
           DEFAULT: "#ececf4",
           dim: "#9b9bb2",
-          faint: "#63637c",
+          faint: "#9393ac",
         },
         border: {
           DEFAULT: "#272738",

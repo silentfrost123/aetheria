@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, ReactNode } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { usePoints } from "@/lib/points-context";
 import { Icon } from "./icons";
+import { CookieConsent } from "./CookieConsent";
+import { FeedbackButton } from "./FeedbackButton";
 
 type NavItem = { href: string; label: string; icon: string };
 
@@ -83,6 +85,14 @@ function NavLink({
 export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Close the mobile drawer with the Escape key (keyboard accessibility).
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
   const pathname = usePathname();
   const { user } = useAuth();
   const { balance } = usePoints();
@@ -92,6 +102,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-bg relative">
+      {/* Skip link — first tab stop for keyboard users */}
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-bg-panel focus:text-text focus:outline-none"
+      >
+        Skip to content
+      </a>
       {/* Ambient aurora background */}
       <div className="aurora" aria-hidden="true">
         <div className="aurora-blob aurora-blob-1" />
@@ -335,7 +352,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Main */}
       <div className={`relative z-10 transition-all duration-300 ${collapsed ? "md:pl-[80px]" : "md:pl-[248px]"}`}>
-        <main key={pathname} className="page-enter pt-14 md:pt-0 pb-24 md:pb-0 min-h-screen">{children}</main>
+        <main id="main" tabIndex={-1} key={pathname} className="page-enter pt-14 md:pt-0 pb-24 md:pb-0 min-h-screen outline-none">{children}</main>
 
         {/* Footer */}
         <footer className="relative z-10 border-t border-border-soft pb-24 md:pb-0">
@@ -353,6 +370,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link href="/my-characters" className="text-text-dim hover:text-text">My characters</Link>
               <Link href="/points" className="text-text-dim hover:text-text">Points</Link>
               <Link href="/settings" className="text-text-dim hover:text-text">Settings</Link>
+            </nav>
+            <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-text-faint" aria-label="Legal">
+              <Link href="/legal/privacy" className="hover:text-text-dim">Privacy Policy</Link>
+              <Link href="/legal/terms" className="hover:text-text-dim">Terms of Service</Link>
+              <Link href="/legal/refund" className="hover:text-text-dim">Refund Policy</Link>
+              <Link href="/legal/cookies" className="hover:text-text-dim">Cookie Policy</Link>
+              <FeedbackButton className="hover:text-text-dim" />
             </nav>
           </div>
         </footer>
@@ -387,6 +411,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           );
         })}
       </nav>
+
+      <CookieConsent />
     </div>
   );
 }
