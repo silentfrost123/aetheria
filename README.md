@@ -88,6 +88,7 @@ STARTING_POINTS=150  # one-time welcome grant so the first message always works
 # Ziina (UAE — NO trade license needed; preferred when set)
 # ZIINA_ACCESS_TOKEN=...               # ziina.com/business/connect → "Other builder or custom"
 # ZIINA_TEST=true                      # test mode; remove/set false for live charges
+# APP_URL=https://your-app.example.com      # optional: public URL for payment return links
 
 # Stripe (alternative — enables card payments & subscriptions on /points)
 # STRIPE_SECRET_KEY=sk_live_...        # or sk_test_...

@@ -92,6 +92,7 @@ Keep it alive with `pm2 start npm --name aetheria -- start` or a systemd unit.
 | `STARTING_POINTS` | no | One-time welcome points per account (default 150) |
 | `ZIINA_ACCESS_TOKEN` | no* | UAE payments via Ziina (no trade license; preferred when set) |
 | `ZIINA_TEST` | no | `true` = Ziina test mode (no real charges) |
+| `APP_URL` | no | Optional override for the public app URL used in payment return links (only needed behind unusual proxies) |
 | `STRIPE_SECRET_KEY` | no* | Enables card payments/subscriptions (`*`payments off without it) |
 | `STRIPE_WEBHOOK_SECRET` | no* | Signing secret for `https://YOUR-DOMAIN/api/billing/webhook` |
 
