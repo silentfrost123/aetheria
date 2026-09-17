@@ -1,16 +1,14 @@
-import { json, readBody } from "@/server/http";
+import { json, readBody, requireUser } from "@/server/http";
+import { db, nowIso } from "@/server/db";
+import { nanoid } from "nanoid";
 
 export const runtime = "nodejs";
 
 /**
- * In-app feedback form. Relayed server-side to the owner's inbox via
- * FormSubmit (https://formsubmit.co) so the email address never appears
- * in client-side code. Rate limited + honeypot to deter spam.
+ * Public feedback endpoint. Messages are stored in the site's own
+ * admin inbox (/admin) — no third-party relay involved.
+ * Rate limited + honeypot to deter spam.
  */
-const FEEDBACK_INBOX = "mustafasammar37@gmail.com";
-const FORMSUBMIT_URL = `https://formsubmit.co/ajax/${FEEDBACK_INBOX}`;
-
-// Simple in-memory per-IP limiter: max 5 submissions / 10 minutes.
 const hits = new Map<string, number[]>();
 
 export async function POST(req: Request) {
@@ -41,20 +39,10 @@ export async function POST(req: Request) {
   recent.push(now);
   hits.set(ip, recent);
 
-  try {
-    const res = await fetch(FORMSUBMIT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        _subject: `Chatworld feedback${contact ? ` from ${contact}` : ""}`,
-        _template: "table",
-        message,
-        reply_to: contact || "(not provided)",
-      }),
-    });
-    if (!res.ok) throw new Error(`relay status ${res.status}`);
-    return json({ ok: true });
-  } catch {
-    return json({ error: "Couldn't send your feedback right now. Please try again shortly." }, 502);
-  }
+  const user = requireUser(req); // optional: signed-in users are linked, guests allowed
+  db.prepare(
+    "INSERT INTO feedback (id, user_id, contact, message, created_at) VALUES (?, ?, ?, ?, ?)"
+  ).run(`fb_${nanoid(16)}`, user?.id || null, contact, message, nowIso());
+
+  return json({ ok: true });
 }

@@ -45,6 +45,15 @@ interface AuditRow {
   createdAt: string;
 }
 
+interface FeedbackRow {
+  id: string;
+  contact: string;
+  message: string;
+  read: number;
+  created_at: string;
+  sender: string | null;
+}
+
 export default function AdminPage() {
   usePageMeta("Admin", 'Chatworld administration.');
   const { user, loading } = useAuth();
@@ -62,6 +71,7 @@ export default function AdminPage() {
   const [codeAmount, setCodeAmount] = useState("1000");
   const [codeCount, setCodeCount] = useState("1");
   const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
+  const [feedback, setFeedback] = useState<FeedbackRow[]>([]);
 
   const isAdmin = !!user?.isAdmin;
 
@@ -100,7 +110,9 @@ export default function AdminPage() {
     if (isAdmin) {
       loadStats();
       loadUsers();
+      loadFeedback();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, isAdmin, router, loadStats, loadUsers]);
 
   if (loading) return <AppShell><div className="p-8 text-text-dim">Loading…</div></AppShell>;
@@ -152,6 +164,26 @@ export default function AdminPage() {
       setError(e?.message || "Failed.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function loadFeedback() {
+    try {
+      const d = await apiFetch<{ feedback: FeedbackRow[] }>("/api/admin/feedback");
+      setFeedback(d.feedback);
+    } catch {
+      /* inbox is non-critical */
+    }
+  }
+
+  async function feedbackAct(id: string, method: "PATCH" | "DELETE") {
+    try {
+      await apiFetch("/api/admin/feedback", { method, body: JSON.stringify({ id }) });
+      setFeedback((rows) =>
+        method === "DELETE" ? rows.filter((r) => r.id !== id) : rows.map((r) => (r.id === id ? { ...r, read: 1 } : r))
+      );
+    } catch (e: any) {
+      setError(e?.message || "Action failed.");
     }
   }
 
@@ -301,6 +333,47 @@ export default function AdminPage() {
               <button className="btn-primary" onClick={installShowcase} disabled={busy}>
                 Install showcase characters
               </button>
+            </section>
+
+            <section className="card p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-display font-bold">Feedback inbox</h2>
+                <button className="btn-ghost !py-1.5 text-xs" onClick={loadFeedback}>
+                  Refresh
+                </button>
+              </div>
+              <p className="text-xs text-text-faint mb-4">
+                Messages sent through the site&rsquo;s Feedback button land here. Unread items are
+                marked with a cherry dot.
+              </p>
+              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                {feedback.map((f) => (
+                  <div key={f.id} className="p-3 rounded-xl bg-bg-soft border border-border">
+                    <div className="flex items-center gap-2 text-xs mb-1.5">
+                      {!f.read && <span className="w-2 h-2 rounded-full bg-accent shrink-0" aria-label="Unread" />}
+                      <span className="font-medium text-text">{f.sender || f.contact || "Anonymous"}</span>
+                      {f.sender && f.contact && <span className="text-text-faint">({f.contact})</span>}
+                      <span className="text-text-faint ml-auto shrink-0">
+                        {f.created_at.slice(0, 16).replace("T", " ")}
+                      </span>
+                    </div>
+                    <p className="text-sm text-text-dim whitespace-pre-wrap">{f.message}</p>
+                    <div className="flex gap-2 mt-2">
+                      {!f.read && (
+                        <button className="btn-ghost !py-1 !px-2 text-xs" onClick={() => feedbackAct(f.id, "PATCH")}>
+                          Mark read
+                        </button>
+                      )}
+                      <button className="btn-ghost !py-1 !px-2 text-xs !text-danger" onClick={() => feedbackAct(f.id, "DELETE")}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {feedback.length === 0 && (
+                  <p className="text-sm text-text-faint py-6 text-center">No feedback yet.</p>
+                )}
+              </div>
             </section>
 
             <section className="card p-5">

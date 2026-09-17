@@ -498,4 +498,18 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_inventory_conversation ON inventory_items(conversation_id);
     `,
   },
+  {
+    name: "014_feedback",
+    sql: `
+      CREATE TABLE IF NOT EXISTS feedback (
+        id TEXT PRIMARY KEY,
+        user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+        contact TEXT NOT NULL DEFAULT '',
+        message TEXT NOT NULL,
+        read INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at DESC);
+    `,
+  },
 ];

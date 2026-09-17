@@ -30,6 +30,7 @@ export function FeedbackButton({ className = "" }: { className?: string }) {
     }
     setBusy(true);
     try {
+      // Stored in the site's own admin inbox — no third-party relay.
       await apiFetch("/api/feedback", {
         method: "POST",
         body: JSON.stringify({ message: message.trim(), contact: contact.trim(), website }),
@@ -39,7 +40,7 @@ export function FeedbackButton({ className = "" }: { className?: string }) {
       setContact("");
       setOpen(false);
     } catch (err: any) {
-      toast(err?.message || "Couldn't send feedback. Please try again.", "error");
+      toast("Couldn't send your feedback right now. Please try again.", "error");
     } finally {
       setBusy(false);
     }

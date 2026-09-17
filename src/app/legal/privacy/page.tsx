@@ -47,7 +47,7 @@ export default function PrivacyPage() {
           "Ziina — payment processing.",
           "Google — optional sign-in (only if you choose it).",
           "Anthropic / OpenRouter — AI response generation.",
-          "FormSubmit — relays the feedback form to our inbox.",
+          "The in-app Feedback button stores your message in a private team inbox inside the service.",
         ]} />
         <p>Each receives only the data it needs for its function. We embed no social-media widgets, ads, or trackers.</p>
       </Sec>
