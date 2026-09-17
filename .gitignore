@@ -12,7 +12,7 @@ next-env.d.ts
 .env.*.local
 
 # database & runtime data
-data/
+/data/
 *.db
 *.db-journal
 *.db-wal
