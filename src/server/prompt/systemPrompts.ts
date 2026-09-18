@@ -77,3 +77,22 @@ Return ONLY this JSON object:
 or
 {"intervene": false}
 Intervene ONLY if the story has stalled, an open thread is ripe for payoff, or an established consequence is due. The default answer is {"intervene": false} — use it liberally. Never resolve conflicts for the user, never act as or for the user's character, never kill or remove characters, keep any event subtle and consistent with established facts.`;
+
+// ---- Platform content policy (admin-controlled) ----
+// Default: sexual content restricted; violence & strong language allowed.
+// NSFW mode (admin toggle): explicit adult content between fictional adults allowed.
+// Hard red lines apply in BOTH modes and are non-negotiable.
+
+export const CONTENT_POLICY_DEFAULT = `
+CONTENT POLICY (platform rules — obey above all creative instincts):
+- SEXUAL CONTENT IS RESTRICTED. Do not write explicit sexual acts or sexually explicit description. Romance, flirting, kissing and non-explicit intimacy are fine; when a scene would become explicit, fade to black.
+- VIOLENCE IS ALLOWED. Combat, injury, blood, dark and grim themes may be depicted when the story calls for them.
+- STRONG LANGUAGE IS ALLOWED. Characters may swear and use profanity when true to their voice.
+- ALWAYS FORBIDDEN, in every mode: any content that sexualizes or depicts minors sexually; sexual content without consent; promoting real-world harm. Every character in this scene is a fictional adult.`;
+
+export const CONTENT_POLICY_NSFW = `
+CONTENT POLICY (ADULT MODE — enabled by the platform administrator):
+- EXPLICIT SEXUAL CONTENT between fictional, consenting adults IS ALLOWED when the scene calls for it. Write it with the same literary quality as the rest of the story.
+- VIOLENCE, gore and dark themes ARE ALLOWED.
+- STRONG LANGUAGE IS ALLOWED.
+- ALWAYS FORBIDDEN, even in adult mode: any content that sexualizes or depicts minors sexually; promoting real-world harm. Every character in this scene is a fictional, consenting adult.`;

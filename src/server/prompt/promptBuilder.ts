@@ -12,7 +12,14 @@ import type {
   Quest,
   InventoryItem,
 } from "@/lib/types";
-import { NARRATOR_SYSTEM, STORY_MODE_SYSTEM, OOC_SYSTEM } from "./systemPrompts";
+import {
+  NARRATOR_SYSTEM,
+  STORY_MODE_SYSTEM,
+  OOC_SYSTEM,
+  CONTENT_POLICY_DEFAULT,
+  CONTENT_POLICY_NSFW,
+} from "./systemPrompts";
+import { isNsfwEnabled } from "../settings";
 import type { ChatMessage } from "../ai/types";
 
 export interface PromptContext {
@@ -256,6 +263,9 @@ export function buildMessages(ctx: PromptContext): ChatMessage[] {
   const baseSystem =
     ctx.mode === "story" ? STORY_MODE_SYSTEM : NARRATOR_SYSTEM;
   const sysParts = [ctx.isOoc ? OOC_SYSTEM : baseSystem];
+
+  // Platform content policy (admin-controlled master switch, server-side only)
+  sysParts.push(isNsfwEnabled() ? CONTENT_POLICY_NSFW : CONTENT_POLICY_DEFAULT);
 
   // 2. World rules
   const worldRules = renderWorldRules(ctx.world);

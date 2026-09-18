@@ -72,6 +72,7 @@ export default function AdminPage() {
   const [codeCount, setCodeCount] = useState("1");
   const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<FeedbackRow[]>([]);
+  const [nsfw, setNsfw] = useState(false);
 
   const isAdmin = !!user?.isAdmin;
 
@@ -111,6 +112,7 @@ export default function AdminPage() {
       loadStats();
       loadUsers();
       loadFeedback();
+      loadNsfw();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, isAdmin, router, loadStats, loadUsers]);
@@ -173,6 +175,37 @@ export default function AdminPage() {
       setFeedback(d.feedback);
     } catch {
       /* inbox is non-critical */
+    }
+  }
+
+  async function loadNsfw() {
+    try {
+      const d = await apiFetch<{ enabled: boolean }>("/api/admin/nsfw");
+      setNsfw(!!d.enabled);
+    } catch {
+      /* non-critical */
+    }
+  }
+
+  async function toggleNsfw() {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const d = await apiFetch<{ enabled: boolean }>("/api/admin/nsfw", {
+        method: "PUT",
+        body: JSON.stringify({ enabled: !nsfw }),
+      });
+      setNsfw(!!d.enabled);
+      setNotice(
+        d.enabled
+          ? "Adult mode ENABLED — sexual content is now allowed site-wide."
+          : "Adult mode disabled — sexual content restricted again (violence & strong language stay allowed)."
+      );
+    } catch (e: any) {
+      setError(e?.message || "Could not update the content policy.");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -248,6 +281,36 @@ export default function AdminPage() {
             </div>
           ))}
         </div>
+
+        {/* Content policy — admin-only master switch */}
+        <section className="card p-5 mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h2 className="font-display font-bold">Content policy</h2>
+              <p className="text-sm text-text-dim mt-1">
+                {nsfw
+                  ? "Adult mode is ON — sexual content allowed. Violence and strong language always allowed."
+                  : "Sexual content is restricted (fade to black). Violence and strong language are allowed."}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span
+                className={`text-xs font-semibold uppercase tracking-wide ${
+                  nsfw ? "text-accent" : "text-text-faint"
+                }`}
+              >
+                {nsfw ? "Adult mode on" : "Adult mode off"}
+              </span>
+              <button
+                className={nsfw ? "btn-ghost" : "btn-primary"}
+                onClick={toggleNsfw}
+                disabled={busy}
+              >
+                {nsfw ? "Disable adult mode" : "Enable adult mode"}
+              </button>
+            </div>
+          </div>
+        </section>
 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Users */}
