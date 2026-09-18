@@ -528,4 +528,14 @@ export const MIGRATIONS: Migration[] = [
        WHERE avatar = '/avatars/ashen-kingdom.png';
     `,
   },
+  {
+    name: "017_relink_legacy_art",
+    sql: `
+      UPDATE characters SET avatar = '/avatars/elena.jpg'  WHERE name = 'Elena';
+      UPDATE characters SET avatar = '/avatars/raven.jpg'  WHERE name = 'Raven';
+      UPDATE characters SET avatar = '/avatars/marcus.jpg' WHERE name = 'Marcus';
+      UPDATE characters SET avatar = '/avatars/ashen-kingdom.jpg' WHERE name = 'The Ashen Road';
+      UPDATE worlds SET artwork = '/avatars/ashen-kingdom.jpg' WHERE name = 'The Ashen Kingdom';
+    `,
+  },
 ];

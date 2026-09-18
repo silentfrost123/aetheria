@@ -160,7 +160,7 @@ export function seedAll() {
     "The Ashen Kingdom",
     "A dark fantasy realm where magic is powered by memory — and every spell costs the caster a piece of who they were.",
     "Dark Fantasy",
-    undefined,
+    "/avatars/ashen-kingdom.jpg",
     "The Age of Ash, 300 years after the Sundering.",
     "Magic draws on memory. Mages grow forgetful the more they cast; the greatest spells erase entire years. Forbidden art: soulbinding.",
     "Queen Elira rules from the capital of Arath. The Noble Houses feud beneath her, and the Order of the Veil hunts memory-thieves.",
@@ -219,7 +219,7 @@ export function seedAll() {
     age: "Unknown (appears 30)",
     occupation: "Exiled Vampire Queen",
     tags: ["dark fantasy", "vampire", "romance", "royalty", "mysterious"],
-    avatar: undefined,
+    avatar: "/avatars/elena.jpg",
     shortDescription: "A deposed vampire queen who traded her throne for a secret — and now haunts the borderlands alone.",
     publicDescription:
       "Once the most feared ruler of the night, Elena was cast out of her own court after a betrayal she refuses to name. Cold, elegant, and fiercely proud, she masks a loneliness that could swallow cities. Whether she is your enemy, your patron, or something more is entirely up to you.",
@@ -294,7 +294,7 @@ export function seedAll() {
     age: "24",
     occupation: "Street Informant & Fixer",
     tags: ["cyberpunk", "sci-fi", "mystery", "rogue"],
-    avatar: undefined,
+    avatar: "/avatars/raven.jpg",
     shortDescription: "A neon-lit fixer who knows every secret in the city — and sells them for a price.",
     publicDescription:
       "Raven runs information the way the grid runs power: fast, dirty, and always on. She'll find anyone, expose anything, and forge any identity — for the right price. She trusts no one, owes everyone, and is somehow always three steps ahead.",
@@ -351,7 +351,7 @@ export function seedAll() {
     age: "34",
     occupation: "Knight of the Veil",
     tags: ["fantasy", "knight", "action", "honor", "rpg"],
-    avatar: undefined,
+    avatar: "/avatars/marcus.jpg",
     shortDescription: "A veteran knight of the Order of the Veil, sworn to the law — until the law asked too much.",
     publicDescription:
       "Sir Marcus has served the Order of the Veil for fifteen years, hunting memory-thieves across the Ashen Kingdom. He is honorable, steady, and quietly haunted by the orders he's obeyed. What he does when his oath and his conscience finally collide is the story waiting to be told.",
@@ -409,7 +409,7 @@ export function seedAll() {
     age: "Story",
     occupation: "Interactive Story",
     tags: ["story mode", "dark fantasy", "adventure", "rpg", "isekai"],
-    avatar: undefined,
+    avatar: "/avatars/ashen-kingdom.jpg",
     shortDescription: "A branching dark-fantasy tale of memory, magic, and the road north to Arath.",
     publicDescription:
       "You are a wandering mage on the Northern Road, bound for the capital of Arath to keep a promise you barely remember. Magic is powered by memory here — and every spell you cast costs you a little more of yourself. A story-mode adventure where the AI narrates the world and controls every NPC.",
@@ -482,7 +482,7 @@ export function seedAll() {
     id("sty"),
     seedUid,
     "The Ashen Road",
-    undefined,
+    "/avatars/ashen-kingdom.jpg",
     "A branching dark-fantasy tale of memory, magic, and the road north to Arath. Every choice carves a new timeline.",
     "Dark Fantasy",
     worldId,
