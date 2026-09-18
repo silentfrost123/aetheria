@@ -38,23 +38,26 @@ export function providerInfo(): {
   };
 }
 
-/** Generate with retry + offline fallback on remote failure. */
+/** User-facing message when the AI cannot be reached. There is intentionally
+ *  no offline/template fallback anymore — failures surface as errors. */
+export const AI_UNAVAILABLE = "Message failed — please try again later.";
+
+/** Generate against the remote provider. Throws AI_UNAVAILABLE when no
+ *  provider is configured or the remote call fails (no offline fallback). */
 export async function generateRobust(
   input: GenerateInput
 ): Promise<import("./types").GenerateResult & { usedFallback: boolean }> {
   const provider = getProvider();
-  const config = loadProviderConfig();
+  if (provider.id === "offline") {
+    console.error("[ai] no AI provider configured");
+    throw new Error(AI_UNAVAILABLE);
+  }
   try {
     const res = await provider.generate(input);
     return { ...res, usedFallback: false };
   } catch (err) {
-    if (provider.id !== "offline") {
-      console.error("[ai] remote generation failed, using offline fallback:", err);
-      const off = new OfflineProvider();
-      const res = await off.generate(input);
-      return { ...res, usedFallback: true };
-    }
-    throw err;
+    console.error("[ai] generation failed:", err);
+    throw new Error(AI_UNAVAILABLE);
   }
 }
 

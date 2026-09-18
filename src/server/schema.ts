@@ -538,4 +538,19 @@ export const MIGRATIONS: Migration[] = [
       UPDATE worlds SET artwork = '/avatars/ashen-kingdom.jpg' WHERE name = 'The Ashen Kingdom';
     `,
   },
+  {
+    name: "020_retired_asset_cleanup",
+    sql: `
+      DELETE FROM messages WHERE conversation_id IN (
+        SELECT id FROM conversations WHERE character_id IN (
+          SELECT id FROM characters WHERE avatar = '/avatars/vc-01.jpg'));
+      DELETE FROM memories WHERE character_id IN (
+        SELECT id FROM characters WHERE avatar = '/avatars/vc-01.jpg');
+      DELETE FROM relationships WHERE character_id IN (
+        SELECT id FROM characters WHERE avatar = '/avatars/vc-01.jpg');
+      DELETE FROM conversations WHERE character_id IN (
+        SELECT id FROM characters WHERE avatar = '/avatars/vc-01.jpg');
+      DELETE FROM characters WHERE avatar = '/avatars/vc-01.jpg';
+    `,
+  },
 ];

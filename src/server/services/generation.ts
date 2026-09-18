@@ -10,7 +10,7 @@ import type {
   CharacterEmotionalState,
 } from "@/lib/types";
 import { buildMessages, type PromptContext } from "../prompt/promptBuilder";
-import { getProvider, generateRobust } from "../ai";
+import { getProvider, generateRobust, AI_UNAVAILABLE } from "../ai";
 import type { GenerateInput, GenerateResult } from "../ai/types";
 import { getEntriesForCharacter, getEntriesForWorld, retrieveLore } from "./lore";
 import { retrieveMemories } from "./memory";
@@ -322,6 +322,9 @@ export function generateStreaming(
   messages.push({ role: "user", content: userText });
 
   const provider = getProvider();
+  if (provider.id === "offline") {
+    return Promise.reject(new Error(AI_UNAVAILABLE));
+  }
   const input: GenerateInput = {
     messages,
     model: conversation.settings?.model || undefined,
@@ -343,13 +346,6 @@ export function generateStreaming(
         result.outputTokens,
         result.latencyMs
       );
-      return { result, usedFallback: provider.id === "offline" };
-    })
-    .catch(async (err) => {
-      console.error("[gen] stream failed, fallback:", err);
-      const res = await generateRobust(input);
-      // Replay the fallback text to the stream callback
-      for (const w of res.text.split(/(\s+)/)) onChunk(w);
-      return { result: res, usedFallback: true };
+      return { result, usedFallback: false };
     });
 }

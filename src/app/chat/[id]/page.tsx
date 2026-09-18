@@ -232,7 +232,11 @@ export default function ChatPage() {
         refreshPoints();
         return;
       }
-      toast(e.message || "Something went wrong.", "error");
+      // AI failure (no offline fallback): drop the optimistic bubble,
+      // re-sync the thread, and show the error.
+      setData((d) => (d ? { ...d, messages: d.messages.filter((m) => m.id !== "temp-user") } : d));
+      load().catch(() => {});
+      toast(e.message || "Message failed — please try again later.", "error");
     }
   }
 

@@ -163,6 +163,11 @@ export async function streamChat(
       if (event === "delta" && data.text) {
         fullText += data.text;
         onDelta(data.text);
+      } else if (event === "error") {
+        throw new ApiError(
+          data.message || "Message failed — please try again later.",
+          502
+        );
       } else if (event === "done") {
         finalMessageId = data.messageId ?? null;
         usedFallback = !!data.usedFallback;

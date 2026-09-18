@@ -9,7 +9,8 @@ import {
   applyHeuristicRelationshipDrift,
 } from "@/server/services/chat";
 import { generateStreaming } from "@/server/services/generation";
-import { spendPoints, MESSAGE_COST } from "@/server/services/points";
+import { AI_UNAVAILABLE } from "@/server/ai";
+import { spendPoints, addPoints, MESSAGE_COST } from "@/server/services/points";
 import { getRelationship, ensureRelationship } from "@/server/services/relationship";
 import { getWorldState } from "@/server/services/worldState";
 import { listMemories } from "@/server/services/memory";
@@ -132,10 +133,9 @@ export async function POST(
       } catch (e) {
         console.error("[chat] generation error:", e);
         if (!stored) {
-          const fallback =
-            "*Something went wrong generating the response. The thread remains intact — try again.*";
-          storeAssistantMessage(conv.id, branch.id, fallback, { parentId: userMsg.id });
-          send("done", { messageId: null, usedFallback: true, content: fallback, error: String(e) });
+          // No fake/offline reply: refund the spend and surface a plain error.
+          addPoints(user.id, MESSAGE_COST, "refund", "Refund — AI unavailable");
+          send("error", { message: AI_UNAVAILABLE });
         }
       } finally {
         try {

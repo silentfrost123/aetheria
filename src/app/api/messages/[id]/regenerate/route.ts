@@ -6,7 +6,8 @@ import {
   addSwipe,
 } from "@/server/services/chat";
 import { runGeneration } from "@/server/services/generation";
-import { spendPoints, MESSAGE_COST } from "@/server/services/points";
+import { AI_UNAVAILABLE } from "@/server/ai";
+import { spendPoints, addPoints, MESSAGE_COST } from "@/server/services/points";
 
 export const runtime = "nodejs";
 
@@ -34,8 +35,16 @@ export async function POST(
     );
   }
 
-  const { result, usedFallback } = await runGeneration(conv, parent.content);
-  updateMessageContent(msg.id, result.text);
-
-  return json({ message: getMessage(msg.id), usedFallback, model: result.model });
+  try {
+    const { result, usedFallback } = await runGeneration(conv, parent.content);
+    updateMessageContent(msg.id, result.text);
+    return json({ message: getMessage(msg.id), usedFallback, model: result.model });
+  } catch (e) {
+    // AI unreachable: give the points back and show a plain error (no offline reply).
+    addPoints(user.id, MESSAGE_COST, "refund", "Refund — AI unavailable");
+    return json(
+      { error: e instanceof Error && e.message ? e.message : AI_UNAVAILABLE },
+      502
+    );
+  }
 }
