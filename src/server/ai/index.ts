@@ -20,17 +20,21 @@ export function getProvider(): ModelProvider {
   return _provider;
 }
 
+/**
+ * Public-facing provider info. Deliberately anonymous: the product never
+ * reveals which underlying model/vendor powers it. Real details stay in
+ * server logs only.
+ */
 export function providerInfo(): {
   id: string;
   isRemote: boolean;
   model: string;
 } {
   const config = loadProviderConfig();
-  const p = getProvider();
   return {
-    id: p.id,
+    id: "chatworld-ai",
     isRemote: !!config?.apiKey,
-    model: config?.defaultModel || "chatworld/offline-engine",
+    model: "Chatworld AI",
   };
 }
 

@@ -8,11 +8,10 @@ import { useAuth } from "@/lib/auth-context";
 import { Icon } from "@/components/icons";
 import { Toggle, Slider, Segmented } from "@/components/ui";
 
-type Section = "story" | "model" | "appearance" | "notifications" | "account";
+type Section = "story" | "appearance" | "notifications" | "account";
 
 const SECTIONS: { id: Section; label: string; icon: string }[] = [
   { id: "story", label: "AI & Story", icon: "sparkle" },
-  { id: "model", label: "Model", icon: "cube" },
   { id: "appearance", label: "Appearance", icon: "eye" },
   { id: "notifications", label: "Notifications", icon: "bell" },
   { id: "account", label: "Account", icon: "profile" },
@@ -26,16 +25,6 @@ const RESPONSE_LENGTHS = [
   { id: "adaptive", label: "Adaptive" },
 ] as const;
 
-const MODEL_SUGGESTIONS = [
-  { id: "", label: "Provider default" },
-  { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash" },
-  { id: "gemini-3.6-pro", label: "Gemini 3.6 Pro" },
-  { id: "gpt-4o-mini", label: "GPT-4o mini" },
-  { id: "gpt-4o", label: "GPT-4o" },
-  { id: "anthropic/claude-3.5-sonnet", label: "Claude 3.5 Sonnet" },
-  { id: "anthropic/claude-sonnet-4", label: "Claude Sonnet 4" },
-];
-
 export default function SettingsPage() {
   usePageMeta("Settings", 'Tune your Chatworld experience.');
   const { user, updateSettings, deleteAccount, logout } = useAuth();
@@ -46,7 +35,6 @@ export default function SettingsPage() {
   const [responseLength, setResponseLength] = useState<string>(s.responseLength || "medium");
   const [narration, setNarration] = useState<number>(s.narrationLevel ?? 0.6);
   const [creativity, setCreativity] = useState<number>(s.creativity ?? 0.85);
-  const [model, setModel] = useState<string>(s.defaultModel || "");
   const [useMemory, setUseMemory] = useState<boolean>(s.useMemory !== false);
   const [useLorebook, setUseLorebook] = useState<boolean>(s.useLorebook !== false);
   const [autoSummary, setAutoSummary] = useState<boolean>(s.autoSummary !== false);
@@ -66,7 +54,6 @@ export default function SettingsPage() {
       responseLength !== (s.responseLength || "medium") ||
       narration !== (s.narrationLevel ?? 0.6) ||
       creativity !== (s.creativity ?? 0.85) ||
-      model !== (s.defaultModel || "") ||
       useMemory !== (s.useMemory !== false) ||
       useLorebook !== (s.useLorebook !== false) ||
       autoSummary !== (s.autoSummary !== false) ||
@@ -77,7 +64,7 @@ export default function SettingsPage() {
       followerNotif !== (s.newFollowerNotifications !== false) ||
       replyNotif !== (s.replyNotifications !== false)
     );
-  }, [s, responseLength, narration, creativity, model, useMemory, useLorebook, autoSummary, aiSuggestions, fontScale, reduceMotion, emailNotif, followerNotif, replyNotif]);
+  }, [s, responseLength, narration, creativity, useMemory, useLorebook, autoSummary, aiSuggestions, fontScale, reduceMotion, emailNotif, followerNotif, replyNotif]);
 
   async function save() {
     setSaving(true);
@@ -85,7 +72,6 @@ export default function SettingsPage() {
       responseLength,
       narrationLevel: narration,
       creativity,
-      defaultModel: model,
       useMemory,
       useLorebook,
       autoSummary,
@@ -229,44 +215,6 @@ export default function SettingsPage() {
                 </div>
                 <div className="w-9 h-5 rounded-full bg-bg-hover border border-border-soft mt-1 shrink-0" />
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* ---- Model ---- */}
-        {section === "model" && (
-          <div className="card p-6 space-y-5">
-            <div>
-              <div className="font-semibold text-sm mb-1">Default model</div>
-              <p className="text-xs text-text-faint mb-4">
-                The AI model used for new chats. &ldquo;Provider default&rdquo; uses the model set in your
-                deployment environment.
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
-                {MODEL_SUGGESTIONS.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setModel(m.id)}
-                    className={`px-3 py-2.5 rounded-xl text-sm text-left border transition-colors ${
-                      model === m.id
-                        ? "bg-accent/15 border-accent/40 text-accent-soft"
-                        : "border-border text-text-dim hover:text-text hover:border-text-faint"
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-              <label className="label">Custom model ID</label>
-              <input
-                className="input font-mono text-sm"
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                placeholder="e.g. gemini-3.6-flash"
-              />
-              <p className="text-[11px] text-text-faint mt-1.5">
-                The ID must match your configured provider. A wrong ID will fall back to the default model.
-              </p>
             </div>
           </div>
         )}

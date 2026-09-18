@@ -24,6 +24,11 @@ The app **auto-seeds demo content on first boot** (empty database), so a fresh d
    MAIN_MODEL=openai/gpt-4o-mini
    ```
    (Railway injects `PORT` automatically.)
+   Alternatives: `ANTHROPIC_API_KEY` (native API; default model
+   `claude-sonnet-4-5`) or `OPENAI_API_KEY` (default `gpt-4o-mini`).
+   Without any AI key the chat runs the built-in offline engine.
+   If a remote call ever fails at runtime, that single message falls back
+   to the offline engine and the error is logged server-side.
 5. Deploy → get your public `*.up.railway.app` URL. Done.
 
 ## Option B — Render (free-ish tier)

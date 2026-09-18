@@ -38,21 +38,39 @@ export class RemoteProvider implements ModelProvider {
   private headers(): Record<string, string> {
     const h: Record<string, string> = {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${this.config.apiKey}`,
     };
     if (this.config.kind === "anthropic") {
+      // Anthropic's native API authenticates with x-api-key, NOT Bearer.
+      h["x-api-key"] = this.config.apiKey;
       h["anthropic-version"] = "2023-06-01";
+    } else if (this.config.kind === "gemini") {
+      h["x-goog-api-key"] = this.config.apiKey;
+    } else {
+      h.Authorization = `Bearer ${this.config.apiKey}`;
     }
     return h;
   }
 
+  private geminiUrl(model: string, stream: boolean): string {
+    const base = this.config.baseUrl.replace(/\/$/, "");
+    return stream
+      ? `${base}/models/${model}:streamGenerateContent?alt=sse`
+      : `${base}/models/${model}:generateContent`;
+  }
+
+  /** Native APIs take bare model ids; only OpenRouter uses vendor prefixes. */
+  private nativeModel(model: string): string {
+    if (this.config.kind === "openrouter") return model;
+    return model.replace(/^(anthropic|openai)\//, "");
+  }
+
   async generate(input: GenerateInput): Promise<GenerateResult> {
     const started = Date.now();
-    const model = input.model || this.config.defaultModel;
+    const model = this.nativeModel(input.model || this.config.defaultModel);
     const body = this.buildBody(input, model, false);
 
     const res = await fetchWithTimeout(
-      this.endpoint(),
+      this.config.kind === "gemini" ? this.geminiUrl(model, false) : this.endpoint(),
       {
         method: "POST",
         headers: this.headers(),
@@ -87,11 +105,11 @@ export class RemoteProvider implements ModelProvider {
     onChunk: (c: { delta: string }) => void
   ): Promise<GenerateResult> {
     const started = Date.now();
-    const model = input.model || this.config.defaultModel;
+    const model = this.nativeModel(input.model || this.config.defaultModel);
     const body = this.buildBody(input, model, true);
 
     const res = await fetchWithTimeout(
-      this.endpoint(),
+      this.config.kind === "gemini" ? this.geminiUrl(model, true) : this.endpoint(),
       {
         method: "POST",
         headers: this.headers(),
@@ -110,6 +128,9 @@ export class RemoteProvider implements ModelProvider {
     // Anthropic streams with a different format
     if (this.config.kind === "anthropic") {
       return this.streamAnthropic(res, model, started, onChunk);
+    }
+    if (this.config.kind === "gemini") {
+      return this.streamGemini(res, model, started, onChunk);
     }
 
     let full = "";
@@ -238,6 +259,26 @@ export class RemoteProvider implements ModelProvider {
   }
 
   private buildBody(input: GenerateInput, model: string, stream: boolean) {
+    if (this.config.kind === "gemini") {
+      const system = input.messages
+        .filter((m) => m.role === "system")
+        .map((m) => m.content)
+        .join("\n\n");
+      const contents = input.messages
+        .filter((m) => m.role !== "system")
+        .map((m) => ({
+          role: m.role === "assistant" ? "model" : "user",
+          parts: [{ text: m.content }],
+        }));
+      return {
+        ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
+        contents,
+        generationConfig: {
+          temperature: input.temperature ?? 0.8,
+          maxOutputTokens: input.maxTokens || 1024,
+        },
+      };
+    }
     if (this.config.kind === "anthropic") {
       const system = input.messages
         .filter((m) => m.role === "system")
@@ -269,6 +310,9 @@ export class RemoteProvider implements ModelProvider {
   }
 
   private extractText(json: any): string {
+    if (json?.candidates?.[0]?.content?.parts != null) {
+      return json.candidates[0].content.parts.map((p: any) => p.text || "").join("");
+    }
     if (json?.choices?.[0]?.message?.content != null) {
       const c = json.choices[0].message.content;
       return typeof c === "string" ? c : JSON.stringify(c);
@@ -280,10 +324,72 @@ export class RemoteProvider implements ModelProvider {
   }
 
   private extractUsage(json: any): { input: number; output: number } {
+    if (json?.usageMetadata) {
+      return {
+        input: json.usageMetadata.promptTokenCount || 0,
+        output: json.usageMetadata.candidatesTokenCount || 0,
+      };
+    }
     const u = json?.usage || {};
     return {
       input: u.prompt_tokens || u.input_tokens || 0,
       output: u.completion_tokens || u.output_tokens || 0,
+    };
+  }
+
+  private async streamGemini(
+    res: Response,
+    model: string,
+    started: number,
+    onChunk: (c: { delta: string }) => void
+  ): Promise<GenerateResult> {
+    let full = "";
+    let usage = { input: 0, output: 0 };
+    const reader = res.body?.getReader();
+    if (!reader) {
+      const json = await res.json();
+      full = this.extractText(json);
+      onChunk({ delta: full });
+      return { text: full, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - started };
+    }
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buffer.indexOf("\n")) >= 0) {
+        const line = buffer.slice(0, idx).trim();
+        buffer = buffer.slice(idx + 1);
+        if (!line.startsWith("data:")) continue;
+        const data = line.slice(5).trim();
+        if (!data || data === "[DONE]") continue;
+        try {
+          const parsed = JSON.parse(data);
+          const parts = parsed.candidates?.[0]?.content?.parts;
+          if (Array.isArray(parts)) {
+            const delta = parts.map((p: any) => p.text || "").join("");
+            if (delta) {
+              full += delta;
+              onChunk({ delta });
+            }
+          }
+          if (parsed.usageMetadata) {
+            usage.input = parsed.usageMetadata.promptTokenCount || usage.input;
+            usage.output = parsed.usageMetadata.candidatesTokenCount || usage.output;
+          }
+        } catch {
+          /* ignore malformed */
+        }
+      }
+    }
+    return {
+      text: full,
+      model,
+      inputTokens: usage.input || countTokens(JSON.stringify(full)),
+      outputTokens: usage.output || countTokens(full),
+      latencyMs: Date.now() - started,
     };
   }
 }

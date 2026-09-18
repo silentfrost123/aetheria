@@ -35,7 +35,7 @@ export interface ModelProvider {
   embed?(texts: string[]): Promise<number[][] | null>;
 }
 
-export type ProviderKind = "openrouter" | "openai" | "anthropic" | "offline";
+export type ProviderKind = "gemini" | "openrouter" | "openai" | "anthropic" | "offline";
 
 export interface ProviderConfig {
   kind: ProviderKind;
@@ -49,11 +49,14 @@ export interface ProviderConfig {
 
 export function loadProviderConfig(): ProviderConfig | null {
   const key =
+    process.env.GEMINI_API_KEY ||
     process.env.OPENROUTER_API_KEY ||
     process.env.OPENAI_API_KEY ||
     process.env.ANTHROPIC_API_KEY;
 
-  const kind: ProviderKind = process.env.OPENROUTER_API_KEY
+  const kind: ProviderKind = process.env.GEMINI_API_KEY
+    ? "gemini"
+    : process.env.OPENROUTER_API_KEY
     ? "openrouter"
     : process.env.OPENAI_API_KEY
     ? "openai"
@@ -69,13 +72,21 @@ export function loadProviderConfig(): ProviderConfig | null {
       process.env.OPENROUTER_BASE_URL ||
       process.env.OPENAI_BASE_URL ||
       process.env.ANTHROPIC_BASE_URL ||
-      (kind === "anthropic" ? "https://api.anthropic.com/v1" : "https://openrouter.ai/api/v1"),
+      (kind === "gemini"
+        ? "https://generativelanguage.googleapis.com/v1beta"
+        : kind === "anthropic"
+        ? "https://api.anthropic.com/v1"
+        : "https://openrouter.ai/api/v1"),
     apiKey: key || "",
     defaultModel:
       process.env.MAIN_MODEL ||
-      (kind === "anthropic"
-        ? "anthropic/claude-sonnet-4"
-        : "openai/gpt-4o-mini"),
+      (kind === "gemini"
+        ? "gemini-3.7-flash"
+        : kind === "anthropic"
+        ? "claude-sonnet-4-5" // native Anthropic model id (aliases are stable)
+        : kind === "openai"
+        ? "gpt-4o-mini" // native OpenAI id, no vendor prefix
+        : "openai/gpt-4o-mini"), // OpenRouter uses vendor-prefixed ids
     memoryModel: process.env.MEMORY_MODEL,
     summaryModel: process.env.SUMMARY_MODEL,
     embedModel: process.env.EMBED_MODEL,

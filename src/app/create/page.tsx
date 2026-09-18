@@ -136,7 +136,7 @@ function WorldForm({ onBack }: { onBack: () => void }) {
       if (w.genre) setGenre(w.genre);
       if (w.description) setDescription(w.description);
     } catch (e: any) {
-      alert(e.message || "Generation failed — is your AI provider configured?");
+      alert(e.message || "Generation failed — the AI may be unavailable right now.");
     } finally {
       setGenerating(false);
     }
@@ -235,7 +235,7 @@ function StoryForm({ onBack }: { onBack: () => void }) {
       if (s.description) setPremise(s.description);
       if (s.situation) setOpening(s.situation);
     } catch (e: any) {
-      alert(e.message || "Generation failed — is your AI provider configured?");
+      alert(e.message || "Generation failed — the AI may be unavailable right now.");
     } finally {
       setGenerating(false);
     }
