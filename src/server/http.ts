@@ -23,6 +23,15 @@ export function requireUser(req: Request): User | null {
  * respond 401/403) when the requester is missing, not an admin, or banned.
  * This is the sole server-side gate for every admin endpoint.
  */
+/** Accept only empty strings or client-generated image data-URLs (the upload
+ *  pipeline emits these). Rejects anything else so hostile strings can never
+ *  be stored as avatar/artwork and reflected into <img src>. */
+export function validImageField(v: unknown): boolean {
+  if (v === undefined || v === null || v === "") return true;
+  if (typeof v !== "string") return false;
+  return /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=\s]{16,700000}$/.test(v);
+}
+
 export function requireAdmin(req: Request): User | null {
   const user = requireUser(req);
   if (!user || !user.isAdmin) return null;

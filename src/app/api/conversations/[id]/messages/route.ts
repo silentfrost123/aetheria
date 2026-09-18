@@ -1,4 +1,5 @@
 import { json, requireUser, readBody, error } from "@/server/http";
+import { rateLimit, clientIp } from "@/server/rateLimit";
 import {
   getConversation,
   getActiveBranch,
@@ -33,6 +34,14 @@ export async function POST(
 ) {
   const user = requireUser(req);
   if (!user) return json({ error: "Not authenticated." }, 401);
+
+  // Protect AI spend: per-user burst cap + coarse per-IP cap.
+  const ip = clientIp(req);
+  const burst = rateLimit(`msg:user:${user.id}`, 20, 60_000);
+  const perIp = rateLimit(`msg:ip:${ip}`, 60, 60_000);
+  if (!burst.ok || !perIp.ok) {
+    return json({ error: "Slow down a little — try again in a minute." }, 429);
+  }
 
   const conv = getConversation(params.id, user.id);
   if (!conv) return error("Conversation not found.", 404);

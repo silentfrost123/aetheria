@@ -1,4 +1,4 @@
-import { json, requireUser, readBody, error } from "@/server/http";
+import { json, requireUser, readBody, error, validImageField } from "@/server/http";
 import {
   getCharacter,
   updateCharacter,
@@ -52,6 +52,7 @@ export async function PUT(
   const user = requireUser(req);
   if (!user) return json({ error: "Not authenticated." }, 401);
   const body = await readBody<any>(req);
+  if (!validImageField(body.avatar) || !validImageField(body.banner)) return error("Invalid image data.", 400);
   const char = updateCharacter(params.id, user.id, body);
   if (!char) return error("Not found or not yours.", 404);
   return json({ character: char });

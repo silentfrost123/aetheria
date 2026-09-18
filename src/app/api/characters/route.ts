@@ -1,4 +1,4 @@
-import { json, requireUser, readBody, error } from "@/server/http";
+import { json, requireUser, readBody, error, validImageField } from "@/server/http";
 import {
   listCharacters,
   createCharacter,
@@ -41,6 +41,7 @@ export async function POST(req: Request) {
   if (!user) return json({ error: "Not authenticated." }, 401);
   const body = await readBody<any>(req);
   if (!body.name?.trim()) return error("Name is required.");
+  if (!validImageField(body.avatar) || !validImageField(body.banner)) return error("Invalid image data.", 400);
 
   const char = createCharacter(user.id, {
     name: body.name,

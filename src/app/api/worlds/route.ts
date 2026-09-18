@@ -1,4 +1,4 @@
-import { json, requireUser, readBody, error } from "@/server/http";
+import { json, requireUser, readBody, error, validImageField } from "@/server/http";
 import { listWorlds, createWorld } from "@/server/services/world";
 import { getEntriesForWorld } from "@/server/services/lore";
 import { listCharacters, getCreatorUsername } from "@/server/services/character";
@@ -39,6 +39,7 @@ export async function POST(req: Request) {
   if (!user) return json({ error: "Not authenticated." }, 401);
   const body = await readBody<any>(req);
   if (!body.name?.trim()) return error("Name is required.");
+  if (!validImageField(body.artwork)) return error("Invalid image data.", 400);
   const world = createWorld(user.id, body);
   return json({ world });
 }
