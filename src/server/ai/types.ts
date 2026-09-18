@@ -69,6 +69,7 @@ export function loadProviderConfig(): ProviderConfig | null {
   return {
     kind,
     baseUrl:
+      process.env.GEMINI_BASE_URL ||
       process.env.OPENROUTER_BASE_URL ||
       process.env.OPENAI_BASE_URL ||
       process.env.ANTHROPIC_BASE_URL ||

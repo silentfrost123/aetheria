@@ -100,9 +100,18 @@ Keep it alive with `pm2 start npm --name aetheria -- start` or a systemd unit.
 | `APP_URL` | no | Optional override for the public app URL used in payment return links (only needed behind unusual proxies) |
 | `STRIPE_SECRET_KEY` | no* | Enables card payments/subscriptions (`*`payments off without it) |
 | `STRIPE_WEBHOOK_SECRET` | no* | Signing secret for `https://YOUR-DOMAIN/api/billing/webhook` |
+| `AI_MIN_GAP_MS` | no | Minimum spacing between AI request starts (default `3200` ≈ 19/min). Lower it on a paid tier with higher rate limits; raise it if you still hit provider quotas. |
+| `AI_MAX_RETRIES` | no | Retries for rate-limit/transient provider errors (default `3`), honouring the provider's own retry hint |
 
 With **no key at all**, the app still runs using a built-in offline narrative
 engine — useful for a smoke test, but you'll want a real key for quality.
+
+**Rate limits.** Each chat turn can make a few calls (the reply plus background
+memory/story extraction), so a low per-minute quota — free tiers are often
+~20 requests/min — gets saturated quickly during bursts. The app paces its own
+requests (`AI_MIN_GAP_MS`) and retries rate-limit responses using the wait the
+provider asks for, so users see a short pause instead of a failed message.
+On a busy site, raise the provider plan and lower `AI_MIN_GAP_MS`.
 
 ---
 

@@ -7,7 +7,7 @@ import type {
   InventoryItem,
   ItemRarity,
 } from "@/lib/types";
-import { getProvider, generateRobust } from "../ai";
+import { getProvider, generateBackground } from "../ai";
 import { loadProviderConfig } from "../ai/types";
 import { STORY_EXTRACT_SYSTEM, DIRECTOR_SYSTEM } from "../prompt/systemPrompts";
 import { getActiveBranch, listMessages } from "./chat";
@@ -267,7 +267,7 @@ async function extractLlmStoryState(
   const existing = listQuests(conversationId);
   const open = existing.filter((q) => q.status === "active" || q.status === "available");
 
-  const res = await generateRobust({
+  const res = await generateBackground({
     model: cfg.memoryModel || cfg.defaultModel,
     temperature: 0.2,
     maxTokens: 700,
@@ -282,6 +282,7 @@ async function extractLlmStoryState(
       },
     ],
   });
+  if (!res) return; // rate budget saturated — skip this pass
 
   let parsed: any = null;
   try {
@@ -386,7 +387,7 @@ export function maybeRunDirector(
         .join("\n");
       const ws = getWorldState(conversationId);
 
-      const res = await generateRobust({
+      const res = await generateBackground({
         model: cfg.memoryModel || cfg.defaultModel,
         temperature: 0.6,
         maxTokens: 350,
@@ -402,6 +403,7 @@ export function maybeRunDirector(
           },
         ],
       });
+      if (!res) return; // rate budget saturated — skip this pass
 
       let parsed: any = null;
       try {

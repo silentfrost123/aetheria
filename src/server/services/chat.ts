@@ -12,7 +12,7 @@ import { loadCharacter } from "./generation";
 import { addMemory } from "./memory";
 import { ensureRelationship, applyRelationshipDelta } from "./relationship";
 import { ensureWorldState } from "./worldState";
-import { getProvider, generateRobust } from "../ai";
+import { getProvider, generateBackground } from "../ai";
 import { MEMORY_EXTRACT_SYSTEM } from "../prompt/systemPrompts";
 import { loadProviderConfig } from "../ai/types";
 
@@ -424,7 +424,7 @@ async function extractLlmMemories(
 ) {
   const cfg = loadProviderConfig()!;
   const provider = getProvider();
-  const res = await generateRobust({
+  const res = await generateBackground({
     model: cfg.memoryModel || cfg.defaultModel,
     temperature: 0.3,
     maxTokens: 700,
@@ -437,6 +437,7 @@ async function extractLlmMemories(
       },
     ],
   });
+  if (!res) return; // rate budget saturated — heuristics already covered this turn
 
   let parsed: any[] = [];
   try {

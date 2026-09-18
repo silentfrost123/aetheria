@@ -11,6 +11,7 @@ import type {
 } from "@/lib/types";
 import { buildMessages, type PromptContext } from "../prompt/promptBuilder";
 import { getProvider, generateRobust, AI_UNAVAILABLE } from "../ai";
+import { aiSlot } from "../ai/pacer";
 import type { GenerateInput, GenerateResult } from "../ai/types";
 import { getEntriesForCharacter, getEntriesForWorld, retrieveLore } from "./lore";
 import { retrieveMemories } from "./memory";
@@ -335,8 +336,9 @@ export function generateStreaming(
     maxTokens: 900,
   };
 
-  return provider
-    .stream(input, (chunk) => onChunk(chunk.delta))
+  // Paced like every other call, but at interactive priority.
+  return aiSlot("foreground")
+    .then(() => provider.stream(input, (chunk) => onChunk(chunk.delta)))
     .then((result) => {
       recordUsage(
         conversation.userId,

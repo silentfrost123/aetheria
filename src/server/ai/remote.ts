@@ -12,6 +12,85 @@ import { countTokens } from "./types";
  */
 const REQUEST_TIMEOUT_MS = 90_000;
 
+/** Attempts beyond the first, for retryable provider errors (429/5xx). */
+const MAX_RETRIES = (() => {
+  const n = Number(process.env.AI_MAX_RETRIES);
+  return Number.isFinite(n) && n >= 0 ? n : 3;
+})();
+/** Upper bound on a single retry wait, so a bad hint can't stall a request. */
+const MAX_RETRY_WAIT_MS = 20_000;
+const RETRYABLE = new Set([429, 500, 502, 503, 504]);
+
+function sleep(ms: number) {
+  return new Promise<void>((r) => setTimeout(r, ms));
+}
+
+/** Reads the provider's own guidance on when to retry (429 responses). */
+export function parseRetryAfterMs(
+  headers: Headers,
+  errText: string
+): number | null {
+  const header = headers.get("retry-after");
+  if (header) {
+    const secs = Number(header);
+    if (Number.isFinite(secs)) return Math.max(0, secs * 1000);
+    const when = Date.parse(header);
+    if (!Number.isNaN(when)) return Math.max(0, when - Date.now());
+  }
+  // Google: error.details[].retryDelay = "25s"
+  const delay = errText.match(/"retryDelay"\s*:\s*"([\d.]+)s"/);
+  if (delay) return Math.ceil(parseFloat(delay[1]) * 1000);
+  // Google's human-readable hint: "Please retry in 25.447762031s."
+  const retryIn = errText.match(/retry in\s+([\d.]+)\s*s/i);
+  if (retryIn) return Math.ceil(parseFloat(retryIn[1]) * 1000);
+  return null;
+}
+
+/**
+ * fetch() with a hard timeout, retrying rate-limit/transient failures.
+ * Rate limits are normal on free tiers and clear on their own within seconds,
+ * so a short wait beats failing the user's message.
+ */
+async function fetchWithRetry(
+  url: string,
+  init: RequestInit,
+  ms: number
+): Promise<Response> {
+  let lastStatus = 0;
+  let lastText = "";
+  let lastHeaders: Headers | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const res = await fetchWithTimeout(url, init, ms);
+    if (!RETRYABLE.has(res.status)) return res;
+
+    lastStatus = res.status;
+    lastHeaders = res.headers;
+    // Drain the body so the connection is released before retrying.
+    lastText = await res.text().catch(() => "");
+
+    if (attempt === MAX_RETRIES) break;
+
+    const hinted = parseRetryAfterMs(res.headers, lastText);
+    const backoff = Math.min(1000 * 2 ** attempt, 8000) + Math.random() * 400;
+    const waitMs = Math.min(hinted ?? backoff, MAX_RETRY_WAIT_MS);
+    console.warn(
+      `[ai] provider ${res.status}; retrying in ${(waitMs / 1000).toFixed(1)}s ` +
+        `(attempt ${attempt + 1}/${MAX_RETRIES})`
+    );
+    await sleep(waitMs);
+  }
+
+  // Rebuild the final failure so callers can still read status + body.
+  return new Response(lastText, {
+    status: lastStatus,
+    statusText: "Provider error",
+    headers: {
+      "content-type": lastHeaders?.get("content-type") || "application/json",
+    },
+  });
+}
+
 /** fetch() with a hard timeout so a hung provider can't tie up a worker. */
 function fetchWithTimeout(url: string, init: RequestInit, ms: number): Promise<Response> {
   const ctrl = new AbortController();
@@ -69,7 +148,7 @@ export class RemoteProvider implements ModelProvider {
     const model = this.nativeModel(input.model || this.config.defaultModel);
     const body = this.buildBody(input, model, false);
 
-    const res = await fetchWithTimeout(
+    const res = await fetchWithRetry(
       this.config.kind === "gemini" ? this.geminiUrl(model, false) : this.endpoint(),
       {
         method: "POST",
@@ -108,7 +187,9 @@ export class RemoteProvider implements ModelProvider {
     const model = this.nativeModel(input.model || this.config.defaultModel);
     const body = this.buildBody(input, model, true);
 
-    const res = await fetchWithTimeout(
+    // Safe to retry: a quota/transient failure happens before any token is
+    // streamed, so the caller has not been sent partial output.
+    const res = await fetchWithRetry(
       this.config.kind === "gemini" ? this.geminiUrl(model, true) : this.endpoint(),
       {
         method: "POST",

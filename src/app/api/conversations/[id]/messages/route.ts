@@ -103,6 +103,16 @@ export async function POST(
       let fullText = "";
       let stored = false;
 
+      // Keep-alive: the reply may wait a few seconds behind the rate limiter or
+      // a provider retry, and idle SSE connections get dropped by proxies.
+      const heartbeat = setInterval(() => {
+        try {
+          controller.enqueue(enc.encode(": ping\n\n"));
+        } catch {
+          /* closed */
+        }
+      }, 10_000);
+
       try {
         const { result, usedFallback } = await generateStreaming(
           conv,
@@ -138,6 +148,7 @@ export async function POST(
           send("error", { message: AI_UNAVAILABLE });
         }
       } finally {
+        clearInterval(heartbeat);
         try {
           controller.close();
         } catch {

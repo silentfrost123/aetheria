@@ -2,6 +2,7 @@ import type { GenerateInput, ModelProvider } from "./types";
 import { loadProviderConfig } from "./types";
 import { RemoteProvider } from "./remote";
 import { OfflineProvider } from "./offline";
+import { aiSlot, estimatedWaitMs } from "./pacer";
 
 let _provider: ModelProvider | null = null;
 
@@ -47,6 +48,33 @@ export const AI_UNAVAILABLE = "Message failed — please try again later.";
 export async function generateRobust(
   input: GenerateInput
 ): Promise<import("./types").GenerateResult & { usedFallback: boolean }> {
+  // Interactive work: paced, but never queued behind background extraction.
+  await aiSlot("foreground");
+  return generateInner(input);
+}
+
+/**
+ * Background bookkeeping (memory/story extraction, director). Skips itself
+ * entirely if the rate budget is saturated — heuristics already ran, so
+ * dropping an occasional pass is preferable to starving the user's reply.
+ */
+export async function generateBackground(
+  input: GenerateInput,
+  maxWaitMs = 8000
+): Promise<(import("./types").GenerateResult & { usedFallback: boolean }) | null> {
+  const ok = await aiSlot("background", maxWaitMs);
+  if (!ok) {
+    console.warn(
+      `[ai] background call skipped — rate budget saturated (queue ≈${estimatedWaitMs()}ms)`
+    );
+    return null;
+  }
+  return generateInner(input);
+}
+
+async function generateInner(
+  input: GenerateInput
+): Promise<import("./types").GenerateResult & { usedFallback: boolean }> {
   const provider = getProvider();
   if (provider.id === "offline") {
     console.error("[ai] no AI provider configured");
@@ -66,6 +94,7 @@ export async function embedTexts(texts: string[]): Promise<number[][] | null> {
   const config = loadProviderConfig();
   if (!config?.apiKey || !config.embedModel) return null;
   try {
+    await aiSlot("background", 5000);
     const provider = new RemoteProvider(config);
     const emb = await provider.embed?.(texts);
     return emb ?? null;
