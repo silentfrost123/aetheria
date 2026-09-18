@@ -512,4 +512,20 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at DESC);
     `,
   },
+  {
+    name: "015_drop_legacy_art",
+    sql: `
+      UPDATE characters SET avatar = NULL
+       WHERE avatar IN ('/avatars/elena.png', '/avatars/raven.png', '/avatars/marcus.png');
+      UPDATE worlds SET artwork = NULL
+       WHERE artwork = '/avatars/ashen-kingdom.png';
+    `,
+  },
+  {
+    name: "016_drop_legacy_story_avatar",
+    sql: `
+      UPDATE characters SET avatar = NULL
+       WHERE avatar = '/avatars/ashen-kingdom.png';
+    `,
+  },
 ];

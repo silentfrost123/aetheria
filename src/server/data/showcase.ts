@@ -2,6 +2,17 @@
  * Showcase character pack — five characters inspired by ooc.ai archetypes.
  * Shared by scripts/add-ooc-characters.ts and POST /api/admin/showcase.
  */
+
+/**
+ * Chatworld house art style for ALL character artwork. Any future generated
+ * portrait must match this direction (set by the founder 18 Sep 2026).
+ */
+export const ARTWORK_STYLE =
+  "Highly detailed semi-realistic painterly anime key visual, premium gacha splash art; " +
+  "intricate iris detail with luminous catchlights, glossy hair speculars, ornate costume " +
+  "detailing, dramatic rim light on a dark bokeh background with floating ember particles; " +
+  "head-and-shoulders, square 1:1, no text, no watermark.";
+
 import { db } from "../db";
 import { createCharacter } from "../services/character";
 
