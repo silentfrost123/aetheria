@@ -87,8 +87,15 @@ Keep it alive with `pm2 start npm --name aetheria -- start` or a systemd unit.
 
 | Variable | Required | Description |
 |---|---|---|
-| `OPENROUTER_API_KEY` | yes* | Your OpenRouter key (`*`or OpenAI/Anthropic equivalent) |
-| `MAIN_MODEL` | no | Main story model (default `openai/gpt-4o-mini`) |
+| `DEEPSEEK_API_KEY` | no* | DeepSeek key — when set it is used in preference to all other keys (`*`one AI key is required for real responses) |
+| `DEEPSEEK_MODEL` | no | DeepSeek model id (default `deepseek-flash`; `deepseek-v4-pro` is stronger and costs more) |
+| `DEEPSEEK_THINKING` | no | `enabled` lets the model reason before answering — better for tricky prompts, slower and more output tokens; off by default |
+| `DEEPSEEK_BASE_URL` | no | Override the DeepSeek endpoint (gateways/proxies only) |
+| `OPENROUTER_API_KEY` | no* | Your OpenRouter key |
+| `GEMINI_API_KEY` | no* | Google AI Studio key |
+| `OPENAI_API_KEY` | no* | OpenAI key |
+| `ANTHROPIC_API_KEY` | no* | Anthropic key |
+| `MAIN_MODEL` | no | Main story model (default depends on provider) |
 | `MEMORY_MODEL` | no | Cheap model for memory extraction |
 | `SUMMARY_MODEL` | no | Cheap model for summarization |
 | `EMBED_MODEL` | no | Embeddings model (optional) |
@@ -105,6 +112,14 @@ Keep it alive with `pm2 start npm --name aetheria -- start` or a systemd unit.
 
 With **no key at all**, the app still runs using a built-in offline narrative
 engine — useful for a smoke test, but you'll want a real key for quality.
+
+**Switching providers.** Keys are checked in a fixed order — DeepSeek, Gemini,
+OpenRouter, OpenAI, Anthropic — and the first one present wins. So adding
+`DEEPSEEK_API_KEY` immediately makes DeepSeek the main model without touching
+anything else, and deleting it switches straight back. If you previously set
+`MAIN_MODEL` to another vendor's model id, clear it or set `DEEPSEEK_MODEL`
+instead, otherwise the app will ask DeepSeek for a model it doesn't have (the
+server logs a warning when it detects this).
 
 **Rate limits.** Each chat turn can make a few calls (the reply plus background
 memory/story extraction), so a low per-minute quota — free tiers are often

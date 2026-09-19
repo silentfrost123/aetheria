@@ -10,7 +10,7 @@ import type {
   CharacterEmotionalState,
 } from "@/lib/types";
 import { buildMessages, type PromptContext } from "../prompt/promptBuilder";
-import { getProvider, generateRobust, AI_UNAVAILABLE } from "../ai";
+import { getProvider, generateRobust, sanitizeModelOverride, AI_UNAVAILABLE } from "../ai";
 import { aiSlot } from "../ai/pacer";
 import type { GenerateInput, GenerateResult } from "../ai/types";
 import { getEntriesForCharacter, getEntriesForWorld, retrieveLore } from "./lore";
@@ -266,7 +266,7 @@ export async function runGeneration(
 
   const input: GenerateInput = {
     messages,
-    model: conversation.settings?.model || undefined,
+    model: sanitizeModelOverride(conversation.settings?.model),
     temperature:
       opts.temperature ??
       conversation.settings?.temperature ??
@@ -328,7 +328,7 @@ export function generateStreaming(
   }
   const input: GenerateInput = {
     messages,
-    model: conversation.settings?.model || undefined,
+    model: sanitizeModelOverride(conversation.settings?.model),
     temperature:
       conversation.settings?.temperature ??
       conversation.settings?.creativity ??

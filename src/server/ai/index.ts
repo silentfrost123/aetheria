@@ -1,5 +1,5 @@
 import type { GenerateInput, ModelProvider } from "./types";
-import { loadProviderConfig } from "./types";
+import { loadProviderConfig, modelProviderMismatch, providerModelWarnings } from "./types";
 import { RemoteProvider } from "./remote";
 import { OfflineProvider } from "./offline";
 import { aiSlot, estimatedWaitMs } from "./pacer";
@@ -14,8 +14,19 @@ export function getProvider(): ModelProvider {
   if (_provider) return _provider;
   const config = loadProviderConfig();
   if (config && config.apiKey) {
+    // Server-side only (never shown to users): makes "which provider is live?"
+    // answerable straight from the deploy logs.
+    console.log(
+      `[ai] provider: ${config.kind} · model: ${config.defaultModel}`
+    );
+    // Stale *_MODEL variables from a previous provider are ignored (see
+    // pickDefaultModel) — say so plainly, since it is invisible otherwise.
+    for (const w of providerModelWarnings(config.kind)) {
+      console.warn(`[ai] WARNING: ${w}`);
+    }
     _provider = new RemoteProvider(config);
   } else {
+    console.warn("[ai] no provider key found — set an API key env var");
     _provider = new OfflineProvider();
   }
   return _provider;
@@ -87,6 +98,32 @@ async function generateInner(
     console.error("[ai] generation failed:", err);
     throw new Error(AI_UNAVAILABLE);
   }
+}
+
+/**
+ * Guards against stale per-conversation model choices. A model id saved while
+ * a different provider was active (e.g. a Gemini id) is unusable after a
+ * provider switch — passing it through would fail every message in that
+ * conversation, so it is ignored and the active provider's default is used.
+ */
+const _warnedOverrides = new Set<string>();
+export function sanitizeModelOverride(
+  model: string | null | undefined
+): string | undefined {
+  if (!model) return undefined;
+  const config = loadProviderConfig();
+  if (!config) return undefined;
+  if (modelProviderMismatch(config.kind, model)) {
+    if (!_warnedOverrides.has(model)) {
+      _warnedOverrides.add(model);
+      console.warn(
+        `[ai] ignoring saved model "${model}" — not valid for provider ` +
+          `"${config.kind}"; using "${config.defaultModel}" instead`
+      );
+    }
+    return undefined;
+  }
+  return model;
 }
 
 /** Embed texts; returns null when no embedding provider is configured. */

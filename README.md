@@ -59,7 +59,10 @@ cp .env.example .env.local
 Then edit `.env.local` and add your provider key. The app works with **any one** of:
 
 ```bash
-# OpenRouter (recommended — one key, many models)
+# DeepSeek direct — takes precedence when set
+DEEPSEEK_API_KEY=sk-...
+
+# or OpenRouter (one key, many models)
 OPENROUTER_API_KEY=sk-or-v1-...
 
 # or OpenAI direct
@@ -68,6 +71,10 @@ OPENROUTER_API_KEY=sk-or-v1-...
 # or Anthropic direct
 # ANTHROPIC_API_KEY=sk-ant-...
 ```
+
+If several keys are present, the first one in the order above wins — remove a
+key to fall back to the next. The active provider and model are printed to the
+server log at startup.
 
 Model routing (all optional):
 

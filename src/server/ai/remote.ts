@@ -4,7 +4,7 @@ import type {
   ModelProvider,
   ProviderConfig,
 } from "./types";
-import { countTokens } from "./types";
+import { countTokens, DEFAULT_DEEPSEEK_MODEL } from "./types";
 
 /**
  * OpenAI-compatible remote provider (OpenRouter, OpenAI, Together, Groq, ...).
@@ -146,7 +146,10 @@ export class RemoteProvider implements ModelProvider {
   async generate(input: GenerateInput): Promise<GenerateResult> {
     const started = Date.now();
     const model = this.nativeModel(input.model || this.config.defaultModel);
-    const body = this.buildBody(input, model, false);
+    const body =
+      this.config.kind === "deepseek"
+        ? this.buildDeepSeekBody(input, model, false)
+        : this.buildBody(input, model, false);
 
     const res = await fetchWithRetry(
       this.config.kind === "gemini" ? this.geminiUrl(model, false) : this.endpoint(),
@@ -185,7 +188,10 @@ export class RemoteProvider implements ModelProvider {
   ): Promise<GenerateResult> {
     const started = Date.now();
     const model = this.nativeModel(input.model || this.config.defaultModel);
-    const body = this.buildBody(input, model, true);
+    const body =
+      this.config.kind === "deepseek"
+        ? this.buildDeepSeekBody(input, model, true)
+        : this.buildBody(input, model, true);
 
     // Safe to retry: a quota/transient failure happens before any token is
     // streamed, so the caller has not been sent partial output.
@@ -390,6 +396,29 @@ export class RemoteProvider implements ModelProvider {
     };
   }
 
+  /** DeepSeek's thinking mode is ON by default at high effort: the reasoning
+   *  tokens are billed as output and count against `max_tokens`, which can
+   *  crowd out the actual reply and delay the first streamed word. Story turns
+   *  therefore default to non-thinking; set DEEPSEEK_THINKING=enabled to opt in. */
+  private buildDeepSeekBody(input: GenerateInput, model: string, stream: boolean) {
+    const thinking = deepseekThinkingEnabled();
+    return {
+      model,
+      messages: input.messages,
+      stream,
+      max_tokens: input.maxTokens || 1024,
+      // The OpenAI-format toggle is a top-level field on a raw REST call.
+      thinking: { type: thinking ? "enabled" : "disabled" },
+      // Thinking mode ignores temperature/penalties entirely — omit rather
+      // than send a value that silently does nothing.
+      ...(thinking ? {} : { temperature: input.temperature ?? 0.8 }),
+      ...(input.stop ? { stop: input.stop } : {}),
+      ...(input.responseFormat === "json"
+        ? { response_format: { type: "json_object" } }
+        : {}),
+    };
+  }
+
   private extractText(json: any): string {
     if (json?.candidates?.[0]?.content?.parts != null) {
       return json.candidates[0].content.parts.map((p: any) => p.text || "").join("");
@@ -474,3 +503,11 @@ export class RemoteProvider implements ModelProvider {
     };
   }
 }
+
+/** DeepSeek thinking mode is opt-in for this app (see buildDeepSeekBody). */
+export function deepseekThinkingEnabled(): boolean {
+  return (process.env.DEEPSEEK_THINKING || "").toLowerCase() === "enabled";
+}
+
+/** Model id used when nothing is configured (exported for tests/docs). */
+export { DEFAULT_DEEPSEEK_MODEL };
