@@ -174,9 +174,16 @@ export default function CharacterProfile() {
         <div className="card overflow-hidden mb-6">
           <div className="relative">
             <div className="h-44 md:h-56 bg-gradient-to-br from-accent/20 via-bg-card to-accent-cyan/10 overflow-hidden">
-              {char.avatar && (
+              {char.banner ? (
+                // A dedicated banner (ultrawide art) gets shown properly
+                // rather than blurred, so the full composition is visible.
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={char.avatar} alt="" className="w-full h-full object-cover object-top blur-sm scale-110 opacity-40" />
+                <img src={char.banner} alt="" className="w-full h-full object-cover" />
+              ) : (
+                char.avatar && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={char.avatar} alt="" className="w-full h-full object-cover object-top blur-sm scale-110 opacity-40" />
+                )
               )}
             </div>
             <div className="px-6 pb-6 -mt-16 relative">

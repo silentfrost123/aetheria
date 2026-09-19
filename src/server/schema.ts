@@ -553,4 +553,11 @@ export const MIGRATIONS: Migration[] = [
       DELETE FROM characters WHERE avatar = '/avatars/vc-01.jpg';
     `,
   },
+  {
+    name: "021_story_asset_fix",
+    sql: `
+      UPDATE stories SET cover = '/avatars/ashen-kingdom.jpg'
+       WHERE cover = '/avatars/ashen-kingdom.png';
+    `,
+  },
 ];

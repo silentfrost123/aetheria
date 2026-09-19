@@ -27,6 +27,16 @@ const server = http.createServer((req, res) => {
     }
 
     // Record the shape of what the app sent, for test assertions.
+    const DUMP = process.env.MOCK_DUMP;
+    if (DUMP && Array.isArray(body.messages)) {
+      fs.appendFileSync(
+        DUMP,
+        "\n===== REQUEST =====\n" +
+          body.messages.map((m) => `--- ${m.role} ---\n${m.content}`).join("\n") +
+          "\n"
+      );
+    }
+
     const record = {
       attempt: attempts,
       method: req.method,

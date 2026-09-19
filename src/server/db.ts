@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { MIGRATIONS } from "./schema";
 import { seedIfEmpty } from "./seed";
+import { insertStudioContent } from "./data/studio";
 
 const DB_PATH =
   process.env.DATABASE_PATH || path.join(process.cwd(), "data", "aetheria.db");
@@ -73,6 +74,9 @@ export function getDb(): Database.Database {
       global.__dbSeedScheduled = true;
       try {
         if (seedIfEmpty()) console.log("[db] auto-seeded demo content");
+        const studio = insertStudioContent();
+        if (studio.added.length)
+          console.log(`[db] installed studio content: ${studio.added.join(", ")}`);
       } catch (e) {
         console.error("[db] seed skipped:", (e as Error)?.message || e);
       }
