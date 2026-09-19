@@ -687,7 +687,7 @@ export const STUDIO_STORIES: StudioStory[] = [
   {
     id: "sty_ninth_bell",
     title: "The Ninth Bell",
-    cover: null,
+    cover: "/avatars/ninth-bell.jpg",
     genre: "Dark Fantasy Mystery",
     worldKey: "halloway",
     characters: ["chr_wren_calloway"],
@@ -697,7 +697,7 @@ export const STUDIO_STORIES: StudioStory[] = [
   {
     id: "sty_glass_season",
     title: "Glass Season",
-    cover: null,
+    cover: "/avatars/glass-season.jpg",
     genre: "Slice of Life Romance",
     worldKey: "marrow_bay",
     characters: ["chr_nadia_voss"],
@@ -707,7 +707,7 @@ export const STUDIO_STORIES: StudioStory[] = [
   {
     id: "sty_understudy",
     title: "The Understudy",
-    cover: null,
+    cover: "/avatars/understudy.jpg",
     genre: "Cyberpunk Thriller",
     worldKey: "verge",
     characters: ["chr_milo_krass"],
@@ -717,7 +717,7 @@ export const STUDIO_STORIES: StudioStory[] = [
   {
     id: "sty_salt_and_iron",
     title: "Salt and Iron",
-    cover: null,
+    cover: "/avatars/salt-and-iron.jpg",
     genre: "Historical Fantasy",
     worldKey: "vessine",
     characters: ["chr_ronan_ash"],
@@ -727,7 +727,7 @@ export const STUDIO_STORIES: StudioStory[] = [
   {
     id: "sty_last_summer",
     title: "Our Last Summer in Light",
-    cover: null,
+    cover: "/avatars/last-summer.jpg",
     genre: "Sci-Fi Drama",
     worldKey: "anwen",
     characters: ["chr_sera_lin"],

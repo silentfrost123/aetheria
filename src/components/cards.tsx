@@ -200,13 +200,15 @@ export function StoryCard({ story }: { story: StoryCardData }) {
   return (
     <Link href={`/characters/${story.id}`} className="group block h-full" aria-label={`${story.title} — story`}>
       <div className="card-interactive overflow-hidden h-full flex flex-col">
-        <div className="relative aspect-[16/10] overflow-hidden bg-bg-card">
+        <div className="relative aspect-[3/4] overflow-hidden bg-bg-card">
           {story.cover ? (
+            // Poster art is vertical (9:16) with the title painted into the
+            // top of the frame, so the crop is anchored to the top.
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={story.cover}
               alt={story.title}
-              className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+              className="w-full h-full object-cover object-top transition-transform duration-500 ease-out group-hover:scale-[1.06]"
               loading="lazy"
             />
           ) : (
@@ -217,8 +219,16 @@ export function StoryCard({ story }: { story: StoryCardData }) {
           </div>
           <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/90 to-transparent" />
           <div className="absolute bottom-3 left-3 right-3">
-            <div className="font-semibold text-white text-sm drop-shadow">{story.title}</div>
-            {story.genre && <div className="text-[11px] text-white/65 mt-0.5">{story.genre}</div>}
+            {/* Poster art carries the title in the top of the frame, so the
+                card only repeats it when there is no cover to read. */}
+            {!story.cover && (
+              <div className="font-semibold text-white text-sm drop-shadow">{story.title}</div>
+            )}
+            {story.genre && (
+              <div className={`text-[11px] text-white/65 ${story.cover ? "" : "mt-0.5"}`}>
+                {story.genre}
+              </div>
+            )}
           </div>
         </div>
         <div className="p-3.5 flex-1 flex flex-col">
@@ -258,6 +268,9 @@ export function FeaturedCard({
 }) {
   const href =
     item.type === "world" ? `/worlds/${item.id}` : `/characters/${item.id}`;
+  // Story covers are vertical posters with the title in the upper frame, so a
+  // wide hero crop is anchored to the top; other art is composed wide already.
+  const imagePosition = item.type === "story" ? "object-top" : "";
   const cta = item.type === "world" ? "Enter World" : item.type === "story" ? "Begin Story" : "Meet Character";
 
   return (
@@ -269,7 +282,7 @@ export function FeaturedCard({
             <img
               src={item.image}
               alt={item.name}
-              className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+              className={`w-full h-full object-cover ${imagePosition} transition-transform duration-700 ease-out group-hover:scale-[1.05]`}
               loading="lazy"
             />
           ) : (

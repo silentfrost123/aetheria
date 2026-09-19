@@ -560,4 +560,19 @@ export const MIGRATIONS: Migration[] = [
        WHERE cover = '/avatars/ashen-kingdom.png';
     `,
   },
+  {
+    name: "022_story_artwork",
+    sql: `
+      UPDATE stories SET cover = '/avatars/ninth-bell.jpg'   WHERE id = 'sty_ninth_bell';
+      UPDATE stories SET cover = '/avatars/glass-season.jpg' WHERE id = 'sty_glass_season';
+      UPDATE stories SET cover = '/avatars/understudy.jpg'   WHERE id = 'sty_understudy';
+      UPDATE stories SET cover = '/avatars/salt-and-iron.jpg' WHERE id = 'sty_salt_and_iron';
+      UPDATE stories SET cover = '/avatars/last-summer.jpg'  WHERE id = 'sty_last_summer';
+      UPDATE characters SET avatar = '/avatars/ninth-bell.jpg'   WHERE id = 'chr_story_ninth_bell';
+      UPDATE characters SET avatar = '/avatars/glass-season.jpg' WHERE id = 'chr_story_glass_season';
+      UPDATE characters SET avatar = '/avatars/understudy.jpg'   WHERE id = 'chr_story_understudy';
+      UPDATE characters SET avatar = '/avatars/salt-and-iron.jpg' WHERE id = 'chr_story_salt_and_iron';
+      UPDATE characters SET avatar = '/avatars/last-summer.jpg'  WHERE id = 'chr_story_last_summer';
+    `,
+  },
 ];

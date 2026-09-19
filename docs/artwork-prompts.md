@@ -119,22 +119,23 @@ Ultrawide panorama, aspect ratio 9:2. No text, no watermark, no borders.
 
 Original Chatworld content added 19 Sep 2026 (`src/server/data/studio.ts`).
 
-**Aspect ratios — all ten images are 9:2 ultrawide.**
-- **Story covers: 9:2** with the title rendered into the art.
-- **Character key visuals: 9:2** as well. Each doubles as the character's
-  hero banner *and* the source for its square avatar: keep the head and
-  shoulders centred in the middle third, because a centre square crop of the
-  render becomes the round/square card avatar on the site. Everything outside
-  that middle third is scenery that only shows on the character's page.
-
-**Safe-area note for story covers:** the app's story cards show the middle
-**16:10** band of the image. Keep the title and the main subject inside the
-central third of the frame so the cover still reads as a card thumbnail on the
-site *and* as a full-width banner. Nothing important in the top or bottom 20%.
+**Format: all ten images are 9:16 vertical posters, anime key-visual style.**
+Generate at 1080×1920 or larger (any 9:16 size is fine — I normalise on upload).
 
 **Filenames** — save each render to exactly this name in `public/avatars/`:
 `ninth-bell.jpg`, `glass-season.jpg`, `understudy.jpg`, `salt-and-iron.jpg`,
 `last-summer.jpg`, `wren.jpg`, `nadia.jpg`, `milo.jpg`, `ronan.jpg`, `sera.jpg`
+
+**Composition rules for 9:16**
+
+- The frame is tall and narrow: build it top-to-bottom, not left-to-right. A
+  vertical stack — sky/ceiling above, subject in the middle, foreground below —
+  reads far better than a wide scene squeezed into a narrow box.
+- Keep the **subject in the centre column**. The site crops these for cards, so
+  anything drifting to the extreme left or right edge gets cut.
+- Story posters carry the title near the **top** of the frame with a short
+  tagline beneath it.
+- Character posters carry **no text** — their name is a caption on the site.
 
 ---
 
@@ -144,155 +145,221 @@ Every image in this slate shares a rendering style so the platform looks like
 one catalogue rather than ten commissions. Paste this block at the end of each
 prompt, after the scene description:
 
-> Painterly semi-realistic anime illustration, premium key-visual quality.
-> Extremely fine detail in hair, fabric and surface texture; natural skin with
-> visible pores and subsurface warmth; cinematic volumetric lighting with a
-> clear dominant light source and visible atmosphere (dust, haze, embers or
-> frost as fits the scene). Rich colour depth with one dominant hue family and
-> a contrasting accent, deep controlled shadows, subtle film grain, shallow
-> depth of field on the background. No watermark, no signature, no borders, no
-> extra text beyond what is specified.
+> High-quality anime key visual in the style of a premium anime film poster.
+> Clean confident line art with varied line weight, crisp cel-shaded colour
+> with soft gradient transitions, vivid saturated palette, glossy specular
+> highlights in the hair, large expressive anime eyes with layered catchlights
+> and defined lashes, elegant stylised character design, dramatic cinematic
+> lighting with one clear dominant light source, richly painted detailed anime
+> background art with atmospheric depth and visible air — rain, mist, dust or
+> glow as fits the scene — subtle screentone texture in the shadows, shallow
+> depth of field behind the subject. Hand-painted illustration look overall.
+> Not photorealistic, not a 3D render. No watermark, no signature, no borders,
+> no extra text beyond what is specified.
 
 ---
 
-## STORY COVERS — 9:2 ultrawide, title in the artwork
+## STORY POSTERS — 9:16 vertical, character + title
+
+Each poster is built like a light-novel / anime promo cover: **one main
+character from the story, shown large**, with the **story title rendered into
+the artwork** near the top and a short tagline beneath it. The character is the
+story's own lead, so the poster and the character poster read as the same world.
+
+Turned into vertical posters, in reading order.
 
 ### 1. The Ninth Bell → ninth-bell.jpg
-Dark fantasy mystery. A drowned canal city at midnight in heavy rain.
+Dark fantasy mystery. Cover character: the girl in the tower.
 
-> Ultrawide cinematic panorama, 9:2 aspect ratio, of a rain-lashed canal city at
-> night: tall bronze bell tower rising slightly left of centre, eight smaller
-> bell shapes silhouetted along the roofline, black water reflecting orange
-> window light in the flooded street below. Wooden shutters, hanging lanterns,
-> rope and wet slate. In the middle distance a lone hooded figure with a brass
-> ear trumpet stands on a bridge looking up at the tower, seen small against
-> the architecture — the composition's focal point. Storm light, rain streaks
-> catching a single warm lamp, cold blue-grey palette with amber accents.
-> Centred composition with generous empty sky at the top for typography.
-> Title text, integrated into the artwork as large engraved-storybook display
-> typography in the upper-centre band: **THE NINTH BELL** — weathered pale gold
-> serif capitals with fine inlaid bronze texture, subtle embossed depth, sitting
-> inside the central 16:10 safe area, not touching the frame edges. [Shared
-> render DNA]
+> Vertical poster composition, 9:16 aspect ratio. A single anime girl shown
+> three-quarter length, centred in the middle of the frame, standing on a
+> rain-soaked stone bridge at midnight. Short soot-dark hair cut unevenly,
+> grey eyes lifted upward with a guarded, unblinking stare, a plain dark
+> tide-house coat with the collar up against the rain, one ink-stained hand
+> pressed flat on a large open ledger she is carrying against her chest, a
+> brass ear trumpet hanging at her collar like an ornament. Behind and above
+> her, an enormous bronze bell tower rises straight up through the frame and
+> out of the top, its silhouette filling the space above her, with rain
+> streaking down the full height of the image and one warm lantern glowing at
+> her feet. The scales are deliberately wrong — she is small against the tower.
+> Cold blue-grey and deep teal palette with amber accents, wet stone and
+> reflective water below. Title text positioned near the top of the frame,
+> integrated into the artwork, sitting in the upper third well clear of the
+> edges: "THE NINTH BELL" in large engraved storybook display capitals,
+> weathered pale gold with fine bronze inlay texture and subtle embossed depth,
+> and directly beneath it in much smaller letter-spaced capitals: "EVERY BELL
+> REMEMBERS. ONE OF THEM CHOOSES." [Shared render DNA]
 
 ### 2. Glass Season → glass-season.jpg
-Melancholy romance. A frozen fishing town, mid-autumn.
+Melancholy romance. Cover character: the cook who never closes.
 
-> Ultrawide cinematic panorama, 9:2 aspect ratio, of a small northern fishing
-> harbour stopped in time: gulls hanging motionless in the air mid-stroke,
-> fishing boats locked in flat grey water, a fisherman frozen mid-laugh on the
-> quay, frost crystals climbing the inside of shop windows. Warm amber light
-> spilling from one small café at the centre of frame — the only lit window on
-> the whole waterfront — with a woman visible at the counter wiping a surface
-> that is already clean. Cool blue-grey and pale gold palette, breath-fog,
-> delicate frost detail on ropes and rails. Title text integrated into the
-> artwork in the upper-centre band: **GLASS SEASON** — elegant thin serif
-> capitals, pale frosted silver with a subtle rim of warm light, letters
-> lightly touched by frost, inside the central safe area. [Shared render DNA]
+> Vertical poster composition, 9:16 aspect ratio. A single anime woman shown
+> three-quarter length, centred in the middle of the frame, standing in the
+> doorway of a small harbour kitchen with warm amber light spilling around her
+> from inside. Dark curls pinned up with a pencil, warm sun-faded skin, flour
+> dusted across her forearms and apron, a single earring, a wooden spoon held
+> loosely in one hand and a steaming bowl in the other. She is smiling warmly
+> while her eyes are already somewhere else — the expression of someone about
+> to say something true. Behind and above her, the top of the frame shows the
+> pale white-grey sky of a stopped northern harbour with frost beginning to
+> climb the inside of the window glass, delicate ice ferns threading outward;
+> below her, the frozen harbour water and a fishing boat locked motionless.
+> Cool blue-grey and frost-white palette with one warm amber interior light.
+> Title text positioned near the top of the frame, integrated into the
+> artwork, sitting in the upper third well clear of the edges: "GLASS SEASON"
+> in elegant thin serif capitals, pale frosted silver with a warm rim light and
+> the letters lightly touched by frost, and directly beneath it in much smaller
+> letter-spaced capitals: "ONE WEEK A YEAR, THE TOWN STOPS. SHE NEVER DOES."
+> [Shared render DNA]
 
 ### 3. The Understudy → understudy.jpg
-Cyberpunk identity thriller. A broadcast city, night.
+Cyberpunk identity thriller. Cover character: the boy with someone else's memories.
 
-> Ultrawide cinematic panorama, 9:2 aspect ratio, of a neon-drowned cyberpunk
-> skyline at night, stacked advertisement surfaces in magenta and cyan climbing
-> out of frame, rain-slick walkways far below. In the centre foreground, a
-> reflective glass corridor: a young man with a shaved head stands facing his
-> own reflection, and the reflection's features blur slightly at the edges so
-> it is not quite identical to him — the composition's focal point. Ozone haze,
-> lens flare from a passing advertisement beam, cool cyan-magenta palette with
-> one warm interior light. Title text integrated into the artwork in the
-> upper-centre band: **THE UNDERSTUDY** — clean modern geometric sans-serif
-> capitals, white with a faint chromatic-aberration edge, glowing softly like
-> an emitted sign, inside the central safe area. [Shared render DNA]
+> Vertical poster composition, 9:16 aspect ratio. A single anime boy shown
+> three-quarter length, centred in the middle of the frame, standing in a dark
+> high-rise apartment and facing a reflective glass surface beside him, one
+> hand pressed to the glass. Shaved head, a small scar over one eyebrow, faint
+> stubble, an expensive borrowed coat worn over a cheap plain shirt, holding a
+> small notebook against his chest. His eyes are open and faintly lost, and his
+> reflection in the glass is subtly wrong — the features smeared and displaced
+> at the edges, as though it does not belong to him. Behind and above him, the
+> top of the frame is filled with a neon-drowned cyberpunk skyline of stacked
+> magenta and cyan advertisement surfaces bleeding light into low cloud; below
+> him, rain-slick walkways fall away into darkness. Cool cyan-magenta palette
+> with one warm interior light. Title text positioned near the top of the
+> frame, integrated into the artwork, sitting in the upper third well clear of
+> the edges: "THE UNDERSTUDY" in clean modern geometric sans-serif capitals,
+> white with a faint chromatic-aberration edge, glowing softly like an emitted
+> sign, and directly beneath it in much smaller letter-spaced capitals: "SOMEONE
+> HAS TO LIVE THE HOURS THAT CAN'T BE SOLD." [Shared render DNA]
 
 ### 4. Salt and Iron → salt-and-iron.jpg
-Historical fantasy. A rain-lashed coastal road at dusk.
+Historical fantasy. Cover character: the officer who collects children.
 
-> Ultrawide cinematic panorama, 9:2 aspect ratio, of a storm-battered coastline
-> road at dusk: white salt-marsh grass, standing stones marking a boundary
-> line, low iron-grey sea and distant six stone forts standing in open water on
-> the horizon. In the centre, two figures face each other across the road in
-> the rain — an officer in a long grey coat holding a raised lantern, and a
-> traveller with a laden cart — neither reaching for a weapon. Cold slate, salt
-> white and rust-orange lantern palette, torrential rain, spindrift, low dark
-> clouds. Title text integrated into the artwork in the upper-centre band:
-> **SALT AND IRON** — heavy weathered serif capitals, iron-grey with salt-white
-> accents, slightly corroded edges, inside the central safe area. [Shared
-> render DNA]
+> Vertical poster composition, 9:16 aspect ratio. A single anime man shown
+> three-quarter length, centred in the middle of the frame, standing on a
+> flooded coastal road in heavy rain at dusk. Close-cropped beard gone silver
+> at the jaw, weathered skin and deep lines, level patient eyes carrying
+> visible exhaustion, a brass tide-mark badge sewn over the breast of a
+> salt-stained grey coat with the collar turned up. He holds a lantern raised
+> at chest height, its rust-orange light the only warm thing in the image and
+> throwing his face into relief — formal, courteous, unreadable, not a
+> villain's face. Behind and above him, the top of the frame is low dark storm
+> clouds and driving rain with one thin break of pale light at the horizon;
+> below him, white salt-marsh grass and standing boundary stones sink into dark
+> water, and far out to one side six small stone forts stand in open grey sea.
+> Iron grey, salt white and rust-orange palette. Title text positioned near the
+> top of the frame, integrated into the artwork, sitting in the upper third
+> well clear of the edges: "SALT AND IRON" in heavy weathered serif capitals,
+> iron-grey with salt-white accents and slightly corroded edges, and directly
+> beneath it in much smaller letter-spaced capitals: "THE LAW SAYS ONE CHILD.
+> THE SEA SAYS NOTHING." [Shared render DNA]
 
 ### 5. Our Last Summer in Light → last-summer.jpg
-Science-fiction drama. A sun deck inside a generation ship.
+Science-fiction drama. Cover character: the keeper of the sun deck.
 
-> Ultrawide cinematic panorama, 9:2 aspect ratio, of an immense starship
-> interior: six kilometres of mirrored conduit running to the horizon and
-> opening into a shaft of genuine golden starlight falling onto a long deck.
-> Children run along the lit deck, silhouetted; a young woman in a sun-faded
-> uniform stands at the edge with a ledger, watching them rather than the
-> light — the composition's focal point. Warm gold and clean white against the
-> cool grey of the surrounding machinery, drifting dust motes in the beam,
-> polished metal reflecting the sunlight. Title text integrated into the
-> artwork in the upper-centre band: **OUR LAST SUMMER IN LIGHT** — refined
-> thin capitals with generous letter spacing, warm white with a soft golden
-> glow, inside the central safe area. [Shared render DNA]
+> Vertical poster composition, 9:16 aspect ratio. A single anime girl shown
+> three-quarter length, centred in the middle of the frame, standing on the
+> deck of a generation ship as a shaft of genuine golden starlight falls from
+> the top of the image straight down onto her. Sun-freckled cheeks and nose,
+> short black hair, pale skin below the collar, a uniform shirt faded from navy
+> to weak tea with the sleeves rolled, holding a slim ledger against her ribs
+> with one thumb marking the page. She is smiling warmly while delivering bad
+> news — brisk, entirely in control, the faintest tiredness gathering around
+> her eyes — and she is looking slightly off to one side rather than at the
+> viewer. Behind and above her, an immense curved ship interior rises out of
+> frame with six kilometres of mirrored conduit receding upward into the light;
+> below her, small silhouetted children run along the lit deck, tiny against
+> the vast machinery, with drifting dust motes visible in the beam. Warm gold
+> and clean white against industrial grey. Title text positioned near the top
+> of the frame, integrated into the artwork, sitting in the upper third well
+> clear of the edges: "OUR LAST SUMMER IN LIGHT" in refined thin capitals with
+> generous letter spacing, warm white with a soft golden glow, and directly
+> beneath it in much smaller letter-spaced capitals: "A PROMISE MADE BY THE
+> DEAD, KEPT BY THE LIVING." [Shared render DNA]
 
 ---
 
-## CHARACTER KEY VISUALS — 9:2 ultrawide
+## CHARACTER POSTERS — 9:16 vertical, no text
 
-Each prompt below describes the subject; the wide frame carries the
-environment outward to both sides. Ask for the background to continue left and
-right rather than zooming out from the subject — the middle third must still
-read as a clean portrait if cropped square.
+Each is a three-quarter-length portrait so the tall frame is used properly. The
+face and shoulders sit in the **upper-middle** of the frame — that region
+becomes the square card avatar on the site, so it must read as a portrait on
+its own.
 
 ### 6. Wren Calloway → wren.jpg
-> Ultrawide key visual, 9:2 aspect ratio, character centred in the middle third. Head-and-shoulders framing of a nineteen-year-old girl
-> with a watchful, unblinking grey gaze and a chin held slightly back, reading
-> the viewer the way she reads a ledger. Soot-dark hair cropped short and
-> uneven, self-cut. Ink-stained fingers, a brass ear trumpet hanging at her
-> collar like an ornament, a plain dark coat with a tide-house brass pin. She
-> stands in a cold bell tower at night, wet bronze and rain visible behind her,
-> a single lantern lighting one half of her face and leaving the other in
-> shadow. Palette: bronze, wet slate, one warm amber light. Composed, wary,
-> faintly superior. No text. The tower interior continues left and right into darkness, wet bronze struts and hanging ropes receding, rain visible through tall openings on both sides of frame. Middle third clean for a square crop. [Shared render DNA]
+> Vertical poster composition, 9:16 aspect ratio, no text. Three-quarter-length
+> anime portrait of a nineteen-year-old girl, centred, standing in a cold bell
+> tower at night. Watchful unblinking grey eyes reading the viewer the way she
+> reads a ledger, chin held slightly back, slight frown of concentration.
+> Soot-dark hair cropped short and uneven, clearly self-cut, a few strands
+> falling loose across her forehead. Ink-stained fingers, a brass ear trumpet
+> hanging at her collar like an ornament, a plain dark tide-house coat with a
+> small brass pin. One hand rests on a large open ledger at her waist. Behind
+> and above her the tower climbs out of frame into darkness — wet bronze struts,
+> hanging ropes, rain visible through a tall slit window behind her shoulder.
+> A single lantern lights one half of her face and leaves the other in deep
+> shadow. Bronze, wet slate and amber palette. Her face and shoulders sit in the
+> upper-middle of the frame, well clear of the edges. [Shared render DNA]
 
 ### 7. Nadia Voss → nadia.jpg
-> Ultrawide key visual, 9:2 aspect ratio, character centred in the middle third. Head-and-shoulders framing of a thirty-one-year-old woman with dark curls pinned up using a pencil, warm sun-faded skin, flour
-> dusted on her forearms, a single earring. She is mid-laugh but her eyes are
-> already somewhere else — the expression of someone about to say something
-> true. Warm kitchen interior behind her: a banked fire, hanging copper pans,
-> frost beginning to climb the inside of the window at the edge of frame.
-> Palette: amber firelight, copper, creamy white, with cold blue frost at the
-> edges. No text. The kitchen continues outward on both sides: copper pans, a banked hearth to the left, a frost-edged window to the right, warm depth of field falling away. Middle third clean for a square crop. [Shared render DNA]
+> Vertical poster composition, 9:16 aspect ratio, no text. Three-quarter-length
+> anime portrait of a thirty-one-year-old woman, centred, standing behind the
+> counter of a small harbour kitchen. She is mid-laugh — warm, open, head tipped
+> slightly — but her eyes are already somewhere else, the expression of someone
+> about to say something true. Dark curls pinned up with a pencil, warm
+> sun-faded skin, flour dusted across her forearms and apron, a single earring.
+> She holds a wooden spoon loosely in one hand. Behind and above her: a banked
+> hearth with copper pans hanging in rows, warm firelight glowing low across the
+> room, and at the top edge of the frame a window with frost beginning to climb
+> the inside of the glass. Amber firelight, copper and creamy white palette with
+> cold blue frost at the upper edges. Her face and shoulders sit in the
+> upper-middle of the frame, well clear of the edges. [Shared render DNA]
 
 ### 8. Milo Krass → milo.jpg
-> Ultrawide key visual, 9:2 aspect ratio, character centred in the middle third. Head-and-shoulders framing of a twenty-four-year-old man
-> with a shaved head and a small scar above one eyebrow, open and
-> accommodating expression, faint stubble, wearing an expensive borrowed coat
-> over a cheap plain shirt. He is standing in a dark apartment at night lit
-> only by a wall of city advertisement glow coming through the window — cold
-> magenta and cyan light on one side of his face, deep shadow on the other,
-> neon reflections in his eyes. A half-written notebook is visible in the
-> blurred foreground. Slightly searching, slightly absent. No text. The
-> apartment continues outward on both sides: a dark living space to the left,
-> the neon window wall and its advertisement glow to the right, foreground
-> blurred. Middle third clean for a square crop. [Shared render DNA]
+> Vertical poster composition, 9:16 aspect ratio, no text. Three-quarter-length
+> anime portrait of a twenty-four-year-old man, centred, standing in a dark
+> high-rise apartment at night. Shaved head, a small scar over one eyebrow,
+> faint stubble, wearing an expensive borrowed coat over a cheap plain shirt,
+> one hand in his pocket and the other holding a notebook open against his
+> chest. His expression is open, accommodating, faintly absent — searching for
+> something just out of frame. Cold magenta and cyan advertisement light
+> floods in from a floor-to-ceiling window behind and beside him, catching one
+> side of his face and leaving the other in deep shadow, neon reflections
+> sitting in his eyes. Above him the glow of the city fills the top of the
+> frame; below him, his own reflection is just visible in the polished dark
+> floor. Cool neon magenta-cyan palette with one warm lamp far behind. His face
+> and shoulders sit in the upper-middle of the frame, well clear of the edges.
+> [Shared render DNA]
 
 ### 9. Captain Ronan Ash → ronan.jpg
-> Ultrawide key visual, 9:2 aspect ratio, character centred in the middle third. Head-and-shoulders framing of a forty-four-year-old officer with a close-cropped beard gone silver at the jaw, weathered skin,
-> level patient eyes carrying visible exhaustion, a brass tide-mark badge
-> sewn over the breast of a salt-stained grey coat. He holds a lantern slightly
-> raised, as if deciding whether to illuminate you. Behind him: rain over a
-> dark marsh road at dusk, indistinct stone boundary markers. Palette: iron
-> grey, salt white, rust-orange lantern light. Formal, courteous, unreadable —
-> not a villain's face. No text. The marsh road continues outward on both sides: standing stones receding left, dark rain-lit water to the right, low horizon. Middle third clean for a square crop. [Shared render DNA]
+> Vertical poster composition, 9:16 aspect ratio, no text. Three-quarter-length
+> anime portrait of a forty-four-year-old officer, centred, standing on a dark
+> marsh road in heavy rain at dusk. Close-cropped beard gone silver at the jaw,
+> weathered skin with deep lines, level patient eyes carrying visible
+> exhaustion, a brass tide-mark badge sewn over the breast of a salt-stained
+> grey coat, the coat collar turned up against the weather. He holds a lantern
+> raised at chest height, as if deciding whether to illuminate the viewer — its
+> rust-orange light the only warm thing in the frame, throwing his face into
+> relief. Above and behind him: low slate clouds and rain filling the top of the
+> frame, with one thin break of pale light at the horizon. Below him the flooded
+> road recedes and standing boundary stones sink into dark water. Iron grey,
+> salt white and rust-orange palette. Formal, courteous, unreadable — not a
+> villain's face. His face and shoulders sit in the upper-middle of the frame,
+> well clear of the edges. [Shared render DNA]
 
 ### 10. Sera Lin → sera.jpg
-> Ultrawide key visual, 9:2 aspect ratio, character centred in the middle third. Head-and-shoulders framing of a twenty-six-year-old woman with sun-freckled cheeks, short black hair, pale skin below the collar,
-> wearing a uniform shirt faded from navy to weak tea. She smiles while
-> delivering bad news — warm, brisk, entirely in control, with the faintest
-> tiredness around the eyes. Over her shoulder: the bright edge of a sunlight
-> shaft falling onto warm deck plating, a jar of light-caught dust on a desk.
-> Palette: warm gold and clean white against industrial grey. No text. The deck
-> continues outward on both sides: mirrored conduit machinery receding left, the
-> golden sunlight shaft and warm deck plating to the right, faint silhouettes of
-> children far off. Middle third clean for a square crop. [Shared render DNA]
+> Vertical poster composition, 9:16 aspect ratio, no text. Three-quarter-length
+> anime portrait of a twenty-six-year-old woman, centred, standing on the sun
+> deck of a generation ship. Sun-freckled cheeks and nose, short black hair,
+> pale skin below the collar, wearing a uniform shirt faded from navy to weak
+> tea with the sleeves rolled. She is smiling while delivering bad news — warm,
+> brisk, entirely in control, with the faintest tiredness gathering around her
+> eyes — and she is looking slightly off to one side rather than at the viewer.
+> She holds a slim ledger against her ribs, one thumb marking the page. Behind
+> and above her: an immense shaft of genuine golden starlight falls from the top
+> of the frame through drifting dust motes, catching the mirror conduit
+> machinery receding upward, while distant silhouettes of children run along the
+> lit deck below. Warm gold and clean white against industrial grey. Her face
+> and shoulders sit in the upper-middle of the frame, well clear of the edges.
+> [Shared render DNA]
